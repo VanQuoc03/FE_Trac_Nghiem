@@ -15,11 +15,18 @@ const CreateExam = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user || user.role !== "teacher") {
+      navigate("/login");
+      return;
+    }
+
     const fetchSubjects = async () => {
       try {
         const response = await axios.get("/api/monhoc", {
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${user.token}`,
           },
         });
         setSubjects(response.data);
@@ -33,15 +40,16 @@ const CreateExam = () => {
     };
 
     fetchSubjects();
-  }, []);
+  }, [navigate]);
 
   const handleCreateExam = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
-
+  
+    const user = JSON.parse(localStorage.getItem("user"));
     const id_dethi = `DT${Date.now()}`;
-    const ngay_tao = new Date().toISOString().slice(0, 10); // Changed to date only: "YYYY-MM-DD"
+    const ngay_tao = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
     const thoigianbatdau = new Date(startTime)
       .toISOString()
       .slice(0, 19)
@@ -50,29 +58,33 @@ const CreateExam = () => {
       .toISOString()
       .slice(0, 19)
       .replace("T", " ");
-
+  
     const examData = {
-      id_dethi, // Include id_dethi in examData to match backend expectation
-      id_giaovien: "GV002",
+      id_dethi,
+      id_giaovien: user.id,
       id_monhoc: subject,
       tendethi: title,
       thoigianthi: duration,
       trangthai: examType,
       thoigianbatdau,
       thoigianketthuc,
-      ngay_tao, // Include ngay_tao in examData
+      ngay_tao,
     };
-
+  
     try {
       const response = await axios.post("/api/exams", examData, {
-        // Changed endpoint to match the Express route: /exams
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${user.token}`,
         },
       });
-
+  
       alert("Tạo bài thi thành công!");
-      navigate("/form-question", {
+      console.log("Navigating to /teacher/form-question with state:", {
+        numQuestions,
+        examData: { ...examData, id_dethi: response.data.id_dethi },
+      });
+      navigate("/teacher/form-question", {
         state: { numQuestions, examData: { ...examData, id_dethi: response.data.id_dethi } },
       });
     } catch (error) {

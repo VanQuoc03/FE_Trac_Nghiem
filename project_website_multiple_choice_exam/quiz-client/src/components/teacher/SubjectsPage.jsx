@@ -9,65 +9,60 @@ const API_MONHOC = "/api/monhoc";
 
 const SubjectsPage = () => {
   const navigate = useNavigate();
-  const giaovien = JSON.parse(localStorage.getItem("giaovien"));
+  const [user, setUser] = useState(null);
   const [monHocList, setMonhocList] = useState([]);
   const [exams, setExams] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSubject, setSelectedSubject] = useState("Tất cả");
   const [subjects, setSubjects] = useState([]);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!giaovien) {
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    if (!storedUser || storedUser.role !== "teacher") {
       navigate("/login");
       return;
     }
+    setUser(storedUser);
 
     const fetchMonHoc = async () => {
       try {
-        const token =
-          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZF9naWFvdmllbiI6IkdWMDAyIiwidGVuZGFuZ25oYXBfZ3YiOiJnaWFvdmllbjIiLCJpYXQiOjE3NDQ1Mzc5NjksImV4cCI6MTc0NDU0MTU2OX0.egecp73tdg7p68zPQN5SQX0CGa4_ABqA3nTT9t6LKuQ";
-
         const res = await axios.get(API_MONHOC, {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${storedUser.token}`,
             "Content-Type": "application/json",
           },
         });
         setMonhocList(res.data);
         setSubjects(res.data.map((item) => item.tenmonhoc));
       } catch (error) {
-        console.log("Lỗi khi lấy môn học:", error);
+        console.error("Lỗi khi lấy môn học:", error);
         setError(error.response?.data?.message || "Không thể tải môn học");
       }
     };
 
     const fetchExams = async () => {
       try {
-        const token =
-          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZF9naWFvdmllbiI6IkdWMDAyIiwidGVuZGFuZ25oYXBfZ3YiOiJnaWFvdmllbjIiLCJpYXQiOjE3NDQ1Mzc5NjksImV4cCI6MTc0NDU0MTU2OX0.egecp73tdg7p68zPQN5SQX0CGa4_ABqA3nTT9t6LKuQ";
-
-        const res = await axios.get(`/api/dethi/giaovien/${giaovien.id_giaovien}`, {
+        const res = await axios.get(`/api/dethi/giaovien/${storedUser.id}`, {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${storedUser.token}`,
             "Content-Type": "application/json",
           },
         });
         setExams(res.data);
       } catch (error) {
-        console.log("Lỗi khi lấy đề thi:", error);
+        console.error("Lỗi khi lấy đề thi:", error);
         setError(error.response?.data?.message || "Không thể tải đề thi");
         if (error.response?.status === 401 || error.response?.status === 403) {
-          localStorage.removeItem("giaovien");
-          localStorage.removeItem("token");
+          localStorage.removeItem("user");
           navigate("/login");
         }
       }
     };
 
-    fetchMonHoc();
-    fetchExams();
-  }, [giaovien, navigate]);
+    Promise.all([fetchMonHoc(), fetchExams()]).finally(() => setLoading(false));
+  }, [navigate]);
 
   const getTenMonHoc = (id_monhoc) => {
     const found = monHocList.find((m) => m.id_monhoc === id_monhoc);
@@ -78,13 +73,17 @@ const SubjectsPage = () => {
     const mon = getTenMonHoc(item.id_monhoc);
     return (
       (selectedSubject === "Tất cả" || mon === selectedSubject) &&
-      item.id_giaovien === giaovien?.id_giaovien
+      item.id_giaovien === user?.id
     );
   });
 
   const filteredSubjects = subjects.filter((subject) =>
     subject.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  if (loading) {
+    return <div className="text-center mt-10">Đang tải dữ liệu...</div>;
+  }
 
   if (error) {
     return <div className="text-center mt-10 text-red-500">{error}</div>;
@@ -137,7 +136,7 @@ const SubjectsPage = () => {
           <div className="flex flex-wrap justify-center relative mt-4">
             <FaUserCircle className="size-14" />
             <div className="absolute mr-16">
-              <p className="absolute w-[100px] mt-12">{giaovien?.ten_giaovien}</p>
+              <p className="absolute w-[100px] mt-12">{user?.ten_giaovien || "Giáo viên"}</p>
             </div>
           </div>
           <hr className="mt-7 border-gray-400" />
@@ -158,18 +157,19 @@ const SubjectsPage = () => {
       <div className="flex items-center flex-wrap justify-center border-t-2 border-gray-200 mt-8">
         {filteredExams.length > 0 ? (
           filteredExams.map((exam) => (
-            <div
+            <Link
               key={exam.id_dethi}
+              to={`/teacher/exam/${exam.id_dethi}`}
               className="w-[20%] h-[200px] justify-between bg-white p-4 rounded-md m-4 flex flex-col shadow-[0_3px_10px_rgb(0,0,0,0.2)]"
             >
               <h3 className="font-bold">{exam.id_dethi}</h3>
               <h3 className="font-bold">{getTenMonHoc(exam.id_monhoc)}</h3>
-              <p className="font-semibold">{giaovien?.ten_giaovien}</p>
+              <p className="font-semibold">{user?.ten_giaovien || "Giáo viên"}</p>
               <p>Thời gian: {exam.thoigianthi} phút</p>
               <span className="w-[35%] text-sm rounded-full flex justify-center bg-green-500 text-white">
                 #{getTenMonHoc(exam.id_monhoc)}
               </span>
-            </div>
+            </Link>
           ))
         ) : (
           <p>Không có đề thi nào.</p>

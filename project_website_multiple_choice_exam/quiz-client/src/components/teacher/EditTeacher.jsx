@@ -1,5 +1,5 @@
 import React from "react";
-import FormTeacher from "../components/teacher/FormTeacher";
+import FormTeacher from "./FormTeacher";
 
 const EditTeacher = () => {
   return <FormTeacher></FormTeacher>;

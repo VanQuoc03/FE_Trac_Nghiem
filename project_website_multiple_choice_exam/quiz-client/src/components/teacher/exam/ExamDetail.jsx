@@ -6,34 +6,53 @@ const ExamDetail = () => {
   const navigate = useNavigate();
   const { id_dethi } = useParams();
   const [exam, setExam] = useState(null);
+  const [error, setError] = useState("");
   const API = `/api/dethi/${id_dethi}`;
 
   useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user || user.role !== "teacher") {
+      navigate("/login");
+      return;
+    }
+
     const fetchExam = async () => {
       try {
-        const res = await axios.get(API);
+        const res = await axios.get(API, {
+          headers: { Authorization: `Bearer ${user.token}` },
+        });
         setExam(res.data);
       } catch (error) {
-        console.log("Lỗi khi lấy chi tiết đề thi", error);
+        console.error("Lỗi khi lấy chi tiết đề thi:", error);
+        setError(error.response?.data?.message || "Không thể tải đề thi");
       }
     };
     fetchExam();
-  }, [id_dethi]);
+  }, [id_dethi, navigate]);
 
   const handleDelete = async () => {
     if (!window.confirm("Bạn có chắc chắn muốn xóa đề thi này?")) return;
 
     try {
-      await axios.delete(`/api/dethi/${id_dethi}`);
+      const user = JSON.parse(localStorage.getItem("user"));
+      await axios.delete(`/api/dethi/${id_dethi}`, {
+        headers: { Authorization: `Bearer ${user.token}` },
+      });
       alert("Xóa đề thi thành công!");
       navigate("/teacher/exams");
     } catch (error) {
-      console.log("Lỗi khi xóa đề thi", error);
-      alert("Xóa đề thi thất bại!");
+      console.error("Lỗi khi xóa đề thi:", error);
+      alert("Xóa đề thi thất bại: " + (error.response?.data?.message || error.message));
     }
   };
 
-  if (!exam) return <div className="text-center mt-10">Đang tải...</div>;
+  if (error) {
+    return <div className="text-center mt-10 text-red-500">{error}</div>;
+  }
+
+  if (!exam) {
+    return <div className="text-center mt-10">Đang tải...</div>;
+  }
 
   return (
     <div className="max-w-4xl mx-auto p-6 shadow rounded bg-white">
@@ -46,7 +65,7 @@ const ExamDetail = () => {
       </p>
       <p>
         <strong>Môn thi: </strong>
-        {exam.tenmonhoc}
+        {exam.tenmonhoc || "Không rõ"}
       </p>
       <p>
         <strong>Thời gian thi: </strong>
@@ -54,32 +73,32 @@ const ExamDetail = () => {
       </p>
       <p>
         <strong>Trạng thái: </strong>
-        {exam.trangthai}
+        {exam.trangthai || "Không rõ"}
       </p>
       <p>
         <strong>Giáo viên: </strong>
-        {exam.ten_giaovien}
+        {exam.ten_giaovien || "Không rõ"}
       </p>
 
       <h3 className="text-xl font-bold mt-6 mb-4">Danh sách câu hỏi</h3>
       {exam.questions && exam.questions.length > 0 ? (
         exam.questions.map((question, index) => (
-          <div key={question.id_cauhoi} className="border p-4 mb-4 rounded">
+          <div key={question.id_cauhoi || index} className="border p-4 mb-4 rounded">
             <p>
               <strong>Câu hỏi {index + 1}: </strong>
-              {question.noidungcauhoi}
+              {question.noidungcauhoi || "Không có nội dung"}
             </p>
             <p>
               <strong>Đáp án đúng: </strong>
-              {question.dapan}
+              {question.dapan || "Không có"}
             </p>
             <p>
               <strong>Các lựa chọn: </strong>
             </p>
             <ul className="list-disc ml-6">
-              {question.options.map((option, oIndex) => (
+              {(question.options || []).map((option, oIndex) => (
                 <li key={oIndex}>
-                  {String.fromCharCode(65 + oIndex)}. {option}
+                  {String.fromCharCode(65 + oIndex)}. {option || "Không có"}
                 </li>
               ))}
             </ul>
@@ -92,7 +111,7 @@ const ExamDetail = () => {
       <div className="mt-6 flex space-x-4">
         <button
           className="bg-blue-500 text-white hover:bg-blue-600 px-4 py-2 rounded"
-          onClick={() => navigate(`/dethi/edit/${exam.id_dethi}`)}
+          onClick={() => navigate(`/teacher/dethi/edit/${exam.id_dethi}`)}
         >
           Sửa
         </button>

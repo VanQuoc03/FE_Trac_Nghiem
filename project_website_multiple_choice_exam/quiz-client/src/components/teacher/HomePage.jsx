@@ -5,8 +5,9 @@ import axios from "axios";
 
 const API_BAITHI = "/api/baithi";
 
-const ExamCard = ({ id, title, startTime, endTime, duration, score, date, button }) => {
+const ExamCard = ({ id, title, startTime, endTime, duration, score, date, button, teacherId }) => {
   const navigate = useNavigate();
+
   return (
     <div className="bg-white rounded-xl shadow-md w-[250px] h-[100%] box border m-2">
       <h3 className="font-bold p-2">{title}</h3>
@@ -39,7 +40,9 @@ const ExamCard = ({ id, title, startTime, endTime, duration, score, date, button
         {button && (
           <button
             className="mt-3 bg-white px-4 py-2 rounded-lg hover:bg-slate-300 w-[90%] text-black border-2 border-solid"
-            onClick={() => navigate(`/exam/${id}`)}
+            onClick={() =>
+              navigate(`/teacher/exam/${id}`, { state: { teacherId } })
+            }
           >
             {button}
           </button>
@@ -56,22 +59,61 @@ const HomePage = () => {
   const [latestExam, setLatestExam] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [user, setUser] = useState(null);
+  const [teacherId, setTeacherId] = useState(null);
 
   useEffect(() => {
-    const giaovien = JSON.parse(localStorage.getItem("giaovien"));
-    if (!giaovien) {
+    let storedUser = JSON.parse(localStorage.getItem("user"));
+    console.log("User from localStorage in HomePage:", storedUser);
+
+    if (!storedUser) {
+      console.log("No user found, redirecting to /login");
+      navigate("/login");
+      return;
+    }
+    if (storedUser.role !== "teacher") {
+      console.log(`Invalid role: ${storedUser.role}, redirecting to /login`);
+      navigate("/login");
+      return;
+    }
+    if (!storedUser.token) {
+      console.log("No token found, redirecting to /login");
       navigate("/login");
       return;
     }
 
+    // Extract teacherId from token if user.id is missing
+    let extractedTeacherId = storedUser.id;
+    if (!extractedTeacherId) {
+      try {
+        const tokenPayload = JSON.parse(atob(storedUser.token.split(".")[1]));
+        extractedTeacherId = tokenPayload.id_giaovien;
+        console.log("Extracted teacherId from token in HomePage:", extractedTeacherId);
+        // Update user object and localStorage
+        storedUser.id = extractedTeacherId;
+        localStorage.setItem("user", JSON.stringify(storedUser));
+      } catch (error) {
+        console.error("Error decoding token in HomePage:", error);
+        console.log("Cannot extract ID from token, redirecting to /login");
+        navigate("/login");
+        return;
+      }
+    }
+
+    if (!extractedTeacherId) {
+      console.log("No teacher ID found after token extraction, redirecting to /login");
+      navigate("/login");
+      return;
+    }
+
+    setUser(storedUser);
+    setTeacherId(extractedTeacherId);
+
     const fetchData = async () => {
       try {
-        const token =
-          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZF9naWFvdmllbiI6IkdWMDAyIiwidGVuZGFuZ25oYXBfZ3YiOiJnaWFvdmllbjIiLCJpYXQiOjE3NDQ1Mzc5NjksImV4cCI6MTc0NDU0MTU2OX0.egecp73tdg7p68zPQN5SQX0CGa4_ABqA3nTT9t6LKuQ";
-
         const response = await axios.get(API_BAITHI, {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${storedUser.token}`,
             "Content-Type": "application/json",
           },
         });
@@ -81,12 +123,12 @@ const HomePage = () => {
           throw new Error("API không trả về mảng!");
         }
 
-        // Lọc bài thi của giáo viên hiện tại (dựa trên id_giaovien trong dethi)
+        // Lọc bài thi của giáo viên hiện tại
         const teacherExams = data.filter(
-          (exam) => exam.dethi.id_giaovien === giaovien.id_giaovien
+          (exam) => exam.dethi.id_giaovien === extractedTeacherId
         );
 
-        // Lọc bài thi hôm nay (danglam hoặc chưa bắt đầu)
+        // Lọc bài thi hôm nay
         const today = new Date().toISOString().split("T")[0];
         const examsToday = teacherExams
           .filter(
@@ -111,12 +153,7 @@ const HomePage = () => {
         setLatestExam(completed[0] || null);
       } catch (error) {
         console.error("Lỗi khi lấy dữ liệu từ API:", error);
-        setError(error.response?.data?.message || "Không thể tải bài thi");
-        if (error.response?.status === 401 || error.response?.status === 403) {
-          localStorage.removeItem("giaovien");
-          localStorage.removeItem("token");
-          navigate("/login");
-        }
+        setError(error.message || "Không thể tải bài thi");
       } finally {
         setLoading(false);
       }
@@ -125,7 +162,7 @@ const HomePage = () => {
   }, [navigate]);
 
   if (loading) {
-    return <div className="text-center text-xl font-bold mt-10">Đang tải dữ liệu...</div>;
+    return <div className="text-center text-xl font-bold mt-10">Đang tải...</div>;
   }
 
   if (error) {
@@ -139,7 +176,7 @@ const HomePage = () => {
         <div className="flex flex-wrap w-full gap-4 justify-start">
           {exams.length > 0 ? (
             exams.map((exam) => (
-              <ExamCard key={exam.id} {...exam} button="Làm bài" />
+              <ExamCard key={exam.id} {...exam} teacherId={teacherId} button="Làm bài" />
             ))
           ) : (
             <p>Không có bài thi nào hôm nay.</p>
@@ -156,6 +193,7 @@ const HomePage = () => {
                 title={`Bài thi ${exam.dethi.tendethi}`}
                 date={exam.ngaylam}
                 score={exam.diemthi}
+                teacherId={teacherId}
               />
             ))
           ) : (
@@ -172,6 +210,7 @@ const HomePage = () => {
                 title={`Bài thi ${latestExam.dethi.tendethi}`}
                 date={latestExam.ngaylam}
                 score={latestExam.diemthi}
+                teacherId={teacherId}
                 button="Chi tiết"
               />
             </div>

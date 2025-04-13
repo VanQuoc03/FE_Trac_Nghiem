@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { MdUpload } from "react-icons/md";
@@ -18,6 +17,22 @@ const FormQuestion = () => {
   const [selectedLongQuestion, setSelectedLongQuestion] = useState(null);
   const [selectedSmallQuestion, setSelectedSmallQuestion] = useState(null);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [user, setUser] = useState(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    if (!storedUser || storedUser.role !== "teacher") {
+      navigate("/login");
+      return;
+    }
+    setUser(storedUser);
+
+    if (!examData) {
+      setError("Không có dữ liệu đề thi. Vui lòng tạo lại.");
+      navigate("/teacher/create-exam");
+    }
+  }, [navigate, examData]);
 
   const handleChanged = (index, field, value) => {
     setQuestions((prev) =>
@@ -46,6 +61,7 @@ const FormQuestion = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${user.token}`,
         },
         body: JSON.stringify({
           examId: examData.id_dethi,
@@ -61,7 +77,8 @@ const FormQuestion = () => {
       if (response.ok) {
         setIsConfirmModalOpen(true);
       } else {
-        alert("Lỗi khi lưu câu hỏi!");
+        const errorData = await response.json();
+        alert(errorData.message || "Lỗi khi lưu câu hỏi!");
       }
     } catch (error) {
       console.error("Lỗi khi lưu câu hỏi:", error);
@@ -89,6 +106,9 @@ const FormQuestion = () => {
     try {
       const response = await fetch("/api/upload-questions", {
         method: "POST",
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
         body: formData,
       });
 
@@ -104,6 +124,10 @@ const FormQuestion = () => {
       alert("Lỗi khi upload file!");
     }
   };
+
+  if (error) {
+    return <div className="text-center mt-10 text-red-500">{error}</div>;
+  }
 
   return (
     <div className="bg-white rounded-lg border border-gray-300 p-4 shadow-md w-[90%] mx-auto mt-10">
@@ -158,7 +182,8 @@ const FormQuestion = () => {
             <button
               key={index}
               onClick={() => {
-                setSelectedSmallQuestion(index), setSelectedLongQuestion(null);
+                setSelectedSmallQuestion(index);
+                setSelectedLongQuestion(null);
               }}
               className={`box w-[50px] h-[50px] border p-4 rounded-md shadow-sm text-center 
             ${selectedSmallQuestion === index ? "bg-blue-200" : ""}`}
@@ -171,7 +196,7 @@ const FormQuestion = () => {
       <div className="flex justify-center mt-4">
         <button
           className="bg-[#D9B384] hover:bg-[#f5c896] text-black p-2 rounded-md mt-4 w-[50%]"
-          onClick={() => navigate(-1)}
+          onClick={() => navigate("/teacher/create-exam")}
         >
           Quay lại
         </button>
@@ -315,7 +340,7 @@ const FormQuestion = () => {
               </button>
               <button
                 className="bg-blue-500 w-[10%] mr-3 rounded-md h-[40px] text-white"
-                onClick={() => navigate("/create-student-list")}
+                onClick={() => navigate("/teacher/create-student-list")}
               >
                 Có
               </button>

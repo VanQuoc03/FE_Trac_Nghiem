@@ -1,5 +1,5 @@
 import React from 'react'
-import TeacherExamForm from '../../../components/exam/TeacherExamForm'
+import TeacherExamForm from '../exam/TeacherExamForm'
 
 const TeacherExamList = () => {
   return (

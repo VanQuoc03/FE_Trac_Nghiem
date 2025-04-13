@@ -5,38 +5,48 @@ import { Link, useNavigate } from "react-router-dom";
 const TeacherExamForm = () => {
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [giaovien, setGiaovien] = useState(null);
+  const [error, setError] = useState("");
+  const [user, setUser] = useState(null);
   const navigate = useNavigate();
   const API_DETHI = "/api/dethi";
 
   useEffect(() => {
-    const profile = JSON.parse(localStorage.getItem("giaovien"));
-    if (profile) {
-      setGiaovien(profile);
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    if (!storedUser || storedUser.role !== "teacher") {
+      navigate("/login");
+      return;
     }
-  }, []);
+    setUser(storedUser);
+  }, [navigate]);
 
   useEffect(() => {
-    if (!giaovien) return;
+    if (!user) return;
     const fetchExams = async () => {
       try {
-        const res = await axios.get(API_DETHI);
+        const res = await axios.get(API_DETHI, {
+          headers: { Authorization: `Bearer ${user.token}` },
+        });
 
         // Lọc đề thi theo giáo viên
         const filtered = res.data.filter(
-          (dethi) => dethi.giaovien?.id_giaovien === giaovien.id_giaovien
+          (dethi) => dethi.giaovien?.id_giaovien === user.id
         );
 
         setExams(filtered);
       } catch (error) {
         console.error("Lỗi khi tải đề thi:", error);
+        setError(error.response?.data?.message || "Không thể tải đề thi");
       } finally {
         setLoading(false);
       }
     };
 
     fetchExams();
-  }, [giaovien]);
+  }, [user]);
+
+  if (error) {
+    return <div className="text-center mt-10 text-red-500">{error}</div>;
+  }
 
   return (
     <div className="max-w-6xl mx-auto p-6">
@@ -66,7 +76,7 @@ const TeacherExamForm = () => {
                 <td className="border p-2">
                   {new Date(exam.ngay_tao).toLocaleDateString("vi-VN")}
                 </td>
-                <td className="border p-2">{exam.monhoc?.tenmonhoc}</td>
+                <td className="border p-2">{exam.monhoc?.tenmonhoc || "Không rõ"}</td>
                 <td className="border p-2">{exam.thoigianthi} phút</td>
                 <td
                   className={`border p-2 font-medium ${
@@ -75,18 +85,18 @@ const TeacherExamForm = () => {
                       : "text-gray-500"
                   }`}
                 >
-                  {exam.trangthai}
+                  {exam.trangthai || "Không rõ"}
                 </td>
                 <td className="border p-2">
                   <Link
                     className="text-blue-500 mr-2 hover:underline"
-                    to={`/exam/${exam.id_dethi}`}
+                    to={`/teacher/exam/${exam.id_dethi}`}
                   >
                     Chi tiết
                   </Link>
                   <button
                     className="text-blue-500 mr-2 hover:underline"
-                    onClick={() => navigate(`/dethi/edit/${exam.id_dethi}`)}
+                    onClick={() => navigate(`/teacher/dethi/edit/${exam.id_dethi}`)}
                   >
                     Sửa
                   </button>
