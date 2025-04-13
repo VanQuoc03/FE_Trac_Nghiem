@@ -1,87 +1,100 @@
-import React, { use, useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { FaUserCircle } from "react-icons/fa";
 import { MdSsidChart } from "react-icons/md";
 import { PiWarningCircleThin } from "react-icons/pi";
+import axios from "axios";
+
 const API_MONHOC = "/api/monhoc";
 
 const SubjectsPage = () => {
+  const navigate = useNavigate();
   const giaovien = JSON.parse(localStorage.getItem("giaovien"));
   const [monHocList, setMonhocList] = useState([]);
   const [exams, setExams] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSubject, setSelectedSubject] = useState("Tất cả");
-  const [currentPage, setCurrentPage] = useState(1);
   const [subjects, setSubjects] = useState([]);
-  const itemPerPage = 4;
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!giaovien) {
+      navigate("/login");
+      return;
+    }
+
+    const fetchMonHoc = async () => {
+      try {
+        const token =
+          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZF9naWFvdmllbiI6IkdWMDAyIiwidGVuZGFuZ25oYXBfZ3YiOiJnaWFvdmllbjIiLCJpYXQiOjE3NDQ1Mzc5NjksImV4cCI6MTc0NDU0MTU2OX0.egecp73tdg7p68zPQN5SQX0CGa4_ABqA3nTT9t6LKuQ";
+
+        const res = await axios.get(API_MONHOC, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        setMonhocList(res.data);
+        setSubjects(res.data.map((item) => item.tenmonhoc));
+      } catch (error) {
+        console.log("Lỗi khi lấy môn học:", error);
+        setError(error.response?.data?.message || "Không thể tải môn học");
+      }
+    };
+
+    const fetchExams = async () => {
+      try {
+        const token =
+          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZF9naWFvdmllbiI6IkdWMDAyIiwidGVuZGFuZ25oYXBfZ3YiOiJnaWFvdmllbjIiLCJpYXQiOjE3NDQ1Mzc5NjksImV4cCI6MTc0NDU0MTU2OX0.egecp73tdg7p68zPQN5SQX0CGa4_ABqA3nTT9t6LKuQ";
+
+        const res = await axios.get(`/api/dethi/giaovien/${giaovien.id_giaovien}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        setExams(res.data);
+      } catch (error) {
+        console.log("Lỗi khi lấy đề thi:", error);
+        setError(error.response?.data?.message || "Không thể tải đề thi");
+        if (error.response?.status === 401 || error.response?.status === 403) {
+          localStorage.removeItem("giaovien");
+          localStorage.removeItem("token");
+          navigate("/login");
+        }
+      }
+    };
+
+    fetchMonHoc();
+    fetchExams();
+  }, [giaovien, navigate]);
+
   const getTenMonHoc = (id_monhoc) => {
     const found = monHocList.find((m) => m.id_monhoc === id_monhoc);
     return found ? found.tenmonhoc : "Không rõ";
   };
-  const filteredExam = exams.filter((item) => {
-    const mon = item.monhoc?.tenmonhoc;
+
+  const filteredExams = exams.filter((item) => {
+    const mon = getTenMonHoc(item.id_monhoc);
     return (
       (selectedSubject === "Tất cả" || mon === selectedSubject) &&
-      item.giaovien?.id_giaovien === giaovien?.id_giaovien
+      item.id_giaovien === giaovien?.id_giaovien
     );
   });
-
-  useEffect(() => {
-    const fetchMonHoc = async () => {
-      try {
-        const res = await fetch(API_MONHOC);
-        const data = await res.json();
-        setMonhocList(data);
-      } catch (error) {
-        console.log("Lỗi khi lấy bài thi", error);
-      }
-    };
-    fetchMonHoc();
-  }, []);
-
-  useEffect(() => {
-    const fetchExam = async () => {
-      try {
-        const res = await fetch("/api/dethi");
-        const data = await res.json();
-        setExams(data);
-      } catch (error) {
-        console.log("Lỗi khi lấy bài thi", error);
-      }
-    };
-    fetchExam();
-  }, []);
-
-  useEffect(() => {
-    const fetchSubjects = async () => {
-      try {
-        const response = await fetch(API_MONHOC, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          mode: "cors",
-        });
-        if (!response.ok)
-          throw new Error(`HTTP error! Status: ${response.status}`);
-        const data = await response.json();
-        setSubjects(data.map((item) => item.tenmonhoc));
-      } catch (error) {
-        console.error("Lỗi khi lấy dữ liệu từ API:", error);
-      }
-    };
-    fetchSubjects();
-  }, []);
 
   const filteredSubjects = subjects.filter((subject) =>
     subject.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  if (error) {
+    return <div className="text-center mt-10 text-red-500">{error}</div>;
+  }
+
   return (
     <div className="w-[80%] mx-auto mt-11">
       <div className="flex justify-between">
-        <div className=" w-[75%]">
-          <h2 className="font-medium text-3xl mb-6">Thư viên đề thi</h2>
+        <div className="w-[75%]">
+          <h2 className="font-medium text-3xl mb-6">Thư viện đề thi</h2>
           <div className="flex space-x-4 mb-8">
             <button
               className={`px-4 py-2 rounded-md ${
@@ -113,7 +126,7 @@ const SubjectsPage = () => {
               type="text"
               placeholder="Nhập từ khóa bạn muốn tìm kiếm..."
               value={searchTerm}
-              onClick={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
             <button className="bg-green-500 w-[100px] rounded-r-md text-white">
               Tìm kiếm
@@ -122,14 +135,13 @@ const SubjectsPage = () => {
         </div>
         <div className="bg-white justify-center w-[25%] h-[320px] box rounded-xl m-4 shadow-md">
           <div className="flex flex-wrap justify-center relative mt-4">
-            <FaUserCircle className=" size-14 " />
-            <div className="absolute mr-16 ">
-              <p className="absolute w-[100px] mt-12 ">Teacher 2</p>
+            <FaUserCircle className="size-14" />
+            <div className="absolute mr-16">
+              <p className="absolute w-[100px] mt-12">{giaovien?.ten_giaovien}</p>
             </div>
           </div>
-
           <hr className="mt-7 border-gray-400" />
-          <div className="flex italic  m-4">
+          <div className="flex italic m-4">
             <PiWarningCircleThin className="size-6" />
             <p className="text-sm">
               Bạn chưa tạo mục tiêu cho quá trình luyện thi của mình. Tạo ngay
@@ -143,40 +155,26 @@ const SubjectsPage = () => {
           </div>
         </div>
       </div>
-      <div
-        className="flex items-center flex-wrap justify-center border-t-2 border-gray-200 mt-8
-      "
-      >
-        {filteredExam.map((exam, index) => (
-          <div
-            key={exam.id_dethi}
-            className="w-[20%] h-[200px] justify-between bg-white p-4 rounded-md m-4 flex flex-col shadow-[0_3px_10px_rgb(0,0,0,0.2)]"
-          >
-            <h3 className="font-bold">{exam.id_dethi}</h3>
-            <h3 className="font-bold">{exam.monhoc.tenmonhoc}</h3>
-            <p className="font-semibold">{exam.giaovien?.ten_giaovien}</p>
-            <p>Thời gian: {exam.thoigianthi} phút</p>
-            <span className="w-[35%] text-sm rounded-full flex justify-center bg-green-500 text-white ">
-              #{exam.monhoc?.tenmonhoc}
-            </span>
-          </div>
-        ))}
+      <div className="flex items-center flex-wrap justify-center border-t-2 border-gray-200 mt-8">
+        {filteredExams.length > 0 ? (
+          filteredExams.map((exam) => (
+            <div
+              key={exam.id_dethi}
+              className="w-[20%] h-[200px] justify-between bg-white p-4 rounded-md m-4 flex flex-col shadow-[0_3px_10px_rgb(0,0,0,0.2)]"
+            >
+              <h3 className="font-bold">{exam.id_dethi}</h3>
+              <h3 className="font-bold">{getTenMonHoc(exam.id_monhoc)}</h3>
+              <p className="font-semibold">{giaovien?.ten_giaovien}</p>
+              <p>Thời gian: {exam.thoigianthi} phút</p>
+              <span className="w-[35%] text-sm rounded-full flex justify-center bg-green-500 text-white">
+                #{getTenMonHoc(exam.id_monhoc)}
+              </span>
+            </div>
+          ))
+        ) : (
+          <p>Không có đề thi nào.</p>
+        )}
       </div>
-      {/* <div className="flex justify-center mt-4">
-        {Array.from({ length: totalPages }, (_, index) => (
-          <button
-            key={index}
-            className={`px-3 py-1 mx-1 rounded-md ${
-              currentPage === index + 1
-                ? "bg-blue-500 text-white"
-                : "bg-gray-200"
-            }`}
-            onClick={() => setCurrentPage(index + 1)}
-          >
-            {index + 1}
-          </button>
-        ))}
-      </div> */}
     </div>
   );
 };

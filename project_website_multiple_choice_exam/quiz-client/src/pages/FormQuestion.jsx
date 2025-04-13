@@ -1,10 +1,12 @@
+
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { MdUpload } from "react-icons/md";
+
 const FormQuestion = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { numQuestions = 5 } = location.state || {};
+  const { numQuestions = 5, examData } = location.state || {};
   const [questions, setQuestions] = useState(
     Array.from({ length: numQuestions }, (_, i) => ({
       id: i + 1,
@@ -15,12 +17,14 @@ const FormQuestion = () => {
   );
   const [selectedLongQuestion, setSelectedLongQuestion] = useState(null);
   const [selectedSmallQuestion, setSelectedSmallQuestion] = useState(null);
-  const [isComfirmModalOpen, setIsComfirmModalOpen] = useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+
   const handleChanged = (index, field, value) => {
     setQuestions((prev) =>
       prev.map((q, i) => (i === index ? { ...q, [field]: value } : q))
     );
   };
+
   const handleOptionChange = (qIndex, optIndex, value) => {
     setQuestions((prev) =>
       prev.map((q, i) =>
@@ -36,24 +40,97 @@ const FormQuestion = () => {
     );
   };
 
+  const handleSaveQuestions = async () => {
+    try {
+      const response = await fetch("/api/questions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          examId: examData.id_dethi,
+          questions: questions.map((q) => ({
+            text: q.text,
+            options: q.options,
+            correctAnswer: q.correctAnswer,
+            id_monhoc: examData.id_monhoc,
+          })),
+        }),
+      });
+
+      if (response.ok) {
+        setIsConfirmModalOpen(true);
+      } else {
+        alert("Lỗi khi lưu câu hỏi!");
+      }
+    } catch (error) {
+      console.error("Lỗi khi lưu câu hỏi:", error);
+      alert("Lỗi khi lưu câu hỏi!");
+    }
+  };
+
+  const handleFileUpload = async (event, fileType) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (
+      (fileType === "docx" && !file.name.endsWith(".docx")) ||
+      (fileType === "pdf" && !file.name.endsWith(".pdf"))
+    ) {
+      alert(`Vui lòng chọn file ${fileType.toUpperCase()}!`);
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("examId", examData.id_dethi);
+    formData.append("id_monhoc", examData.id_monhoc);
+
+    try {
+      const response = await fetch("/api/upload-questions", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (response.ok) {
+        alert("Upload và lưu câu hỏi thành công!");
+        setIsConfirmModalOpen(true);
+      } else {
+        const errorData = await response.json();
+        alert(errorData.message || "Lỗi khi upload file!");
+      }
+    } catch (error) {
+      console.error("Lỗi khi upload file:", error);
+      alert("Lỗi khi upload file!");
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg border border-gray-300 p-4 shadow-md w-[90%] mx-auto mt-10">
       <h2 className="font-medium text-3xl flex justify-center m-6">
         Tạo Câu hỏi bài thi
       </h2>
       <div className="flex h-[40px] mb-4">
-        <button className="text-blue-700 flex items-center border-2 hover:bg-blue-700 hover:text-white border-blue-700 w-[130px] rounded-md mr-4">
-          <MdUpload />
+        <label className="text-blue-700 flex items-center border-2 hover:bg-blue-700 hover:text-white border-blue-700 w-[130px] rounded-md mr-4 cursor-pointer">
+          <MdUpload className="mr-1" />
           Tải lên file doc
-        </button>
-        <button className="text-red-600 flex items-center border-2 hover:bg-red-700 hover:text-white border-red-600 w-[130px] rounded-md mr-4">
-          <MdUpload />
+          <input
+            type="file"
+            accept=".docx"
+            hidden
+            onChange={(e) => handleFileUpload(e, "docx")}
+          />
+        </label>
+        <label className="text-red-600 flex items-center border-2 hover:bg-red-700 hover:text-white border-red-600 w-[130px] rounded-md mr-4 cursor-pointer">
+          <MdUpload className="mr-1" />
           Tải lên file pdf
-        </button>
-        <button className="text-green-700 hover:bg-green-700 hover:text-white flex items-center border-2 border-green-600 w-[130px] rounded-md mr-4">
-          <MdUpload />
-          Tải lên file xlsx
-        </button>
+          <input
+            type="file"
+            accept=".pdf"
+            hidden
+            onChange={(e) => handleFileUpload(e, "pdf")}
+          />
+        </label>
       </div>
 
       <div className="grid grid-cols-3 gap-4">
@@ -100,13 +177,13 @@ const FormQuestion = () => {
         </button>
         <button
           className="bg-[#D9B384] hover:bg-[#f5c896] text-black p-2 rounded-md mt-4 ml-4 w-[50%]"
-          onClick={() => setIsComfirmModalOpen(true)}
+          onClick={handleSaveQuestions}
         >
           Lưu tất cả câu hỏi
         </button>
       </div>
       {(selectedLongQuestion !== null || selectedSmallQuestion !== null) && (
-        <div className="fixed top-0 left-0  w-full h-full bg-gray-900 bg-opacity-50 flex items-center justify-center">
+        <div className="fixed top-0 left-0 w-full h-full bg-gray-900 bg-opacity-50 flex items-center justify-center">
           <div className="relative bg-white p-4 rounded-lg shadow-md w-[700px]">
             <button
               className="absolute top-2 right-2"
@@ -154,22 +231,52 @@ const FormQuestion = () => {
                   ? selectedLongQuestion
                   : selectedSmallQuestion
               ].options.map((opt, index) => (
-                <input
-                  className="w-full border border-gray-300 p-2 rounded-md"
-                  key={index}
-                  type="text"
-                  value={opt}
-                  placeholder={`Nhập đáp án ${index + 1}`}
-                  onChange={(e) =>
-                    handleOptionChange(
+                <div key={index} className="flex items-center">
+                  <input
+                    className="w-full border border-gray-300 p-2 rounded-md"
+                    type="text"
+                    value={opt}
+                    placeholder={`Nhập đáp án ${String.fromCharCode(65 + index)}`}
+                    onChange={(e) =>
+                      handleOptionChange(
+                        selectedLongQuestion !== null
+                          ? selectedLongQuestion
+                          : selectedSmallQuestion,
+                        index,
+                        e.target.value
+                      )
+                    }
+                  />
+                  <input
+                    type="radio"
+                    name={`correctAnswer-${
                       selectedLongQuestion !== null
                         ? selectedLongQuestion
-                        : selectedSmallQuestion,
-                      index,
-                      e.target.value
-                    )
-                  }
-                />
+                        : selectedSmallQuestion
+                    }`}
+                    className="ml-2"
+                    checked={
+                      questions[
+                        selectedLongQuestion !== null
+                          ? selectedLongQuestion
+                          : selectedSmallQuestion
+                      ].correctAnswer === opt
+                    }
+                    onChange={() =>
+                      handleChanged(
+                        selectedLongQuestion !== null
+                          ? selectedLongQuestion
+                          : selectedSmallQuestion,
+                        "correctAnswer",
+                        questions[
+                          selectedLongQuestion !== null
+                            ? selectedLongQuestion
+                            : selectedSmallQuestion
+                        ].options[index]
+                      )
+                    }
+                  />
+                </div>
               ))}
             </div>
             <button
@@ -184,10 +291,10 @@ const FormQuestion = () => {
           </div>
         </div>
       )}
-      {isComfirmModalOpen && (
+      {isConfirmModalOpen && (
         <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center">
           <div className="bg-white rounded-lg shadow-lg w-[30%]">
-            <div className=" p-4">
+            <div className="p-4">
               <h3 className="text-xl mb-2">Thông báo</h3>
               <hr />
               <p className="flex justify-center">
@@ -202,7 +309,7 @@ const FormQuestion = () => {
             <div className="flex justify-end mb-3">
               <button
                 className="bg-gray-600 w-[15%] mr-2 rounded-md text-white"
-                onClick={() => setIsComfirmModalOpen(false)}
+                onClick={() => setIsConfirmModalOpen(false)}
               >
                 Không
               </button>

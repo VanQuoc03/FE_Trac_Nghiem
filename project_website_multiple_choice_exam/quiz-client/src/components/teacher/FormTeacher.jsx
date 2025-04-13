@@ -5,48 +5,90 @@ import { useNavigate } from "react-router-dom";
 const FormTeacher = () => {
   const navigate = useNavigate();
   const [form, setForm] = useState(null);
-  const teacherId = "GV002";
+  const [error, setError] = useState("");
+  const giaovien = JSON.parse(localStorage.getItem("giaovien"));
   const API_GIANGVIEN = "/api/giaovien";
 
   useEffect(() => {
+    if (!giaovien) {
+      navigate("/login");
+      return;
+    }
+
     const fetchTeacher = async () => {
-      const res = await axios.get(`${API_GIANGVIEN}/${teacherId}`);
-      setForm(res.data);
+      try {
+        const token =
+          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZF9naWFvdmllbiI6IkdWMDAyIiwidGVuZGFuZ25oYXBfZ3YiOiJnaWFvdmllbjIiLCJpYXQiOjE3NDQ1Mzc5NjksImV4cCI6MTc0NDU0MTU2OX0.egecp73tdg7p68zPQN5SQX0CGa4_ABqA3nTT9t6LKuQ";
+
+        const res = await axios.get(`${API_GIANGVIEN}/${giaovien.id_giaovien}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        setForm(res.data);
+      } catch (error) {
+        console.error("Lỗi khi lấy dữ liệu giáo viên:", error);
+        setError(error.response?.data?.message || "Không thể tải thông tin giáo viên");
+        if (error.response?.status === 401 || error.response?.status === 403) {
+          localStorage.removeItem("giaovien");
+          localStorage.removeItem("token");
+          navigate("/login");
+        }
+      }
     };
     fetchTeacher();
-  }, []);
+  }, [navigate, giaovien]);
+
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const token =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZF9naWFvdmllbiI6IkdWMDAyIiwidGVuZGFuZ25oYXBfZ3YiOiJnaWFvdmllbjIiLCJpYXQiOjE3NDQ1Mzc5NjksImV4cCI6MTc0NDU0MTU2OX0.egecp73tdg7p68zPQN5SQX0CGa4_ABqA3nTT9t6LKuQ";
+
       const { ten_giaovien, email_gv, phone_gv, lopdaychinh } = form;
-      const res = await axios.put(`${API_GIANGVIEN}/${teacherId}`, {
-        ten_giaovien,
-        email_gv,
-        phone_gv,
-        lopdaychinh,
-      });
+      await axios.put(
+        `${API_GIANGVIEN}/${giaovien.id_giaovien}`,
+        {
+          ten_giaovien,
+          email_gv,
+          phone_gv,
+          lopdaychinh,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
       alert("Cập nhật thành công!");
-      console.log("Dữ liệu sau khi cập nhật", res.data);
-      navigate("/profile"); 
+      navigate("/profile");
     } catch (error) {
       console.error("Lỗi khi cập nhật:", error);
-      alert("Cập nhật thất bại!");
+      alert("Cập nhật thất bại: " + (error.response?.data?.message || error.message));
     }
   };
+
+  if (error) {
+    return <div className="text-center mt-10 text-red-500">{error}</div>;
+  }
+
   if (!form) return <div>Đang tải dữ liệu...</div>;
+
   return (
     <form
       onSubmit={handleSubmit}
       className="max-w-xl mx-auto mt-10 bg-white p-6 shadow-md rounded"
-      action=""
     >
       <h2 className="text-2xl font-medium flex justify-center">
         Chỉnh sửa thông tin
       </h2>
-      <label htmlFor="" className="block font-bold mb-2">
+      <label htmlFor="ten_giaovien" className="block font-bold mb-2">
         Tên giảng viên
       </label>
       <input
@@ -57,7 +99,7 @@ const FormTeacher = () => {
         onChange={handleChange}
       />
 
-      <label htmlFor="" className="block font-bold mb-2">
+      <label htmlFor="email_gv" className="block font-bold mb-2">
         Email
       </label>
       <input
@@ -68,7 +110,7 @@ const FormTeacher = () => {
         onChange={handleChange}
       />
 
-      <label htmlFor="" className="block font-bold mb-2">
+      <label htmlFor="phone_gv" className="block font-bold mb-2">
         Số điện thoại
       </label>
       <input
@@ -79,7 +121,7 @@ const FormTeacher = () => {
         onChange={handleChange}
       />
 
-      <label htmlFor="" className="block font-bold mb-2">
+      <label htmlFor="lopdaychinh" className="block font-bold mb-2">
         Lớp dạy chính
       </label>
       <input

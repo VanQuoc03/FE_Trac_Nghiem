@@ -50,7 +50,7 @@ const TeacherExamForm = () => {
           <thead className="bg-gray-200">
             <tr>
               <th className="border p-2">STT</th>
-              <th className="border p-2">ID Đề thi</th>
+              <th className="border p-2">Tên đề thi</th>
               <th className="border p-2">Ngày tạo</th>
               <th className="border p-2">Môn học</th>
               <th className="border p-2">Thời gian thi</th>
@@ -62,7 +62,7 @@ const TeacherExamForm = () => {
             {exams.map((exam, index) => (
               <tr key={exam.id_dethi} className="text-center">
                 <td className="border p-2">{index + 1}</td>
-                <td className="border p-2 font-semibold">{exam.id_dethi}</td>
+                <td className="border p-2 font-semibold">{exam.tendethi}</td>
                 <td className="border p-2">
                   {new Date(exam.ngay_tao).toLocaleDateString("vi-VN")}
                 </td>
@@ -89,9 +89,6 @@ const TeacherExamForm = () => {
                     onClick={() => navigate(`/dethi/edit/${exam.id_dethi}`)}
                   >
                     Sửa
-                  </button>
-                  <button className="text-blue-500 mr-2 hover:underline">
-                    Xóa
                   </button>
                 </td>
               </tr>

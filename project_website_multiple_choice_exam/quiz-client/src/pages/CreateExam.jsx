@@ -1,99 +1,194 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const CreateExam = () => {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [subject, setSubject] = useState("Tin học");
-  const [duration, setDuration] = useState("10 phút");
-  const [numQuestions, setNumQuestions] = useState(5);  
   const navigate = useNavigate();
+  const [title, setTitle] = useState("");
+  const [subject, setSubject] = useState("");
+  const [duration, setDuration] = useState(10);
+  const [numQuestions, setNumQuestions] = useState(5);
   const [startTime, setStartTime] = useState("");
+  const [examType, setExamType] = useState("dethi");
+  const [subjects, setSubjects] = useState([]);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  
-
-  const handleCreateExam = () => {
-    navigate("/form-question", { state: { numQuestions } });
-  };
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log = {
-      title,
-      description,
-      subject,
-      duration,
-      numQuestions,
-      startTime,
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      try {
+        const response = await axios.get("/api/monhoc", {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+        setSubjects(response.data);
+        if (response.data.length > 0) {
+          setSubject(response.data[0].id_monhoc);
+        }
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách môn học:", error);
+        setError(error.response?.data?.message || "Không thể tải danh sách môn học");
+      }
     };
-    alert("Create exam success!");
+
+    fetchSubjects();
+  }, []);
+
+  const handleCreateExam = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    const id_dethi = `DT${Date.now()}`;
+    const ngay_tao = new Date().toISOString().slice(0, 10); // Changed to date only: "YYYY-MM-DD"
+    const thoigianbatdau = new Date(startTime)
+      .toISOString()
+      .slice(0, 19)
+      .replace("T", " ");
+    const thoigianketthuc = new Date(new Date(startTime).getTime() + duration * 60000)
+      .toISOString()
+      .slice(0, 19)
+      .replace("T", " ");
+
+    const examData = {
+      id_dethi, // Include id_dethi in examData to match backend expectation
+      id_giaovien: "GV002",
+      id_monhoc: subject,
+      tendethi: title,
+      thoigianthi: duration,
+      trangthai: examType,
+      thoigianbatdau,
+      thoigianketthuc,
+      ngay_tao, // Include ngay_tao in examData
+    };
+
+    try {
+      const response = await axios.post("/api/exams", examData, {
+        // Changed endpoint to match the Express route: /exams
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      alert("Tạo bài thi thành công!");
+      navigate("/form-question", {
+        state: { numQuestions, examData: { ...examData, id_dethi: response.data.id_dethi } },
+      });
+    } catch (error) {
+      console.error("Lỗi khi tạo bài thi:", error);
+      setError(error.response?.data?.message || "Lỗi khi tạo bài thi!");
+    } finally {
+      setLoading(false);
+    }
   };
+
   return (
     <div className="bg-white rounded-lg border border-gray-300 p-4 shadow-md w-[90%] mx-auto mt-10">
       <h2 className="text-4xl flex justify-center m-5 font-medium">Tạo bài thi</h2>
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4" action="">
+      {error && <p className="text-red-500 text-center mb-4">{error}</p>}
+      <form onSubmit={handleCreateExam} className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block font-medium" htmlFor="">Tiêu đề</label>
+          <label className="block font-medium" htmlFor="title">
+            Tiêu đề
+          </label>
           <input
             type="text"
+            id="title"
             className="w-full border border-gray-300 p-2 rounded-md"
             placeholder="Tiêu đề"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
+            required
           />
         </div>
         <div>
-          <label className="block font-medium" htmlFor="">Môn học</label>
+          <label className="block font-medium" htmlFor="subject">
+            Môn học
+          </label>
           <select
+            id="subject"
             className="w-full border border-gray-300 p-2 rounded-md"
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
+            disabled={subjects.length === 0}
           >
-            <option value="Tin hoc">Tin hoc</option>
-            <option value="Toán">Toán</option>
-            <option value="Vật lý">Vật lý</option>
-            <option value="Văn">Văn</option>
+            {subjects.length > 0 ? (
+              subjects.map((sub) => (
+                <option key={sub.id_monhoc} value={sub.id_monhoc}>
+                  {sub.tenmonhoc}
+                </option>
+              ))
+            ) : (
+              <option value="">Không có môn học</option>
+            )}
           </select>
         </div>
         <div>
-          <label className="block font-medium" htmlFor="">Ghi chú</label>
-          <textarea
-            name=""
-            id=""
-            className=" w-full border border-gray-300 p-2 rounded-md"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          ></textarea>
-        </div>
-        <div>
-            <label className="block font-medium" htmlFor="">Thời gian thi</label>
-            <select className="w-full border border-gray-300 p-2 rounded-md"
+          <label className="block font-medium" htmlFor="duration">
+            Thời gian thi (phút)
+          </label>
+          <select
+            id="duration"
+            className="w-full border border-gray-300 p-2 rounded-md"
             value={duration}
-            onChange={(e)=> setDuration(e.target.value)}>
-                <option value="10 phút">10 phút</option>
-                <option value="15 phút">15 phút</option>
-                <option value="20 phút">20 phút</option>
-                <option value="30 phút">30 phút</option>
-            </select>
+            onChange={(e) => setDuration(parseInt(e.target.value))}
+          >
+            <option value={10}>10 phút</option>
+            <option value={15}>15 phút</option>
+            <option value={20}>20 phút</option>
+            <option value={30}>30 phút</option>
+          </select>
         </div>
         <div>
-            <label className="block font-medium" htmlFor="">Số câu hỏi</label>
-            <input type="number" className="w-full border border-gray-300 p-2 rounded-md"
+          <label className="block font-medium" htmlFor="numQuestions">
+            Số câu hỏi
+          </label>
+          <input
+            type="number"
+            id="numQuestions"
+            className="w-full border border-gray-300 p-2 rounded-md"
             value={numQuestions}
-            onChange={(e)=> setNumQuestions(e.target.value)}
-            min={5} required
-            />
+            onChange={(e) => setNumQuestions(parseInt(e.target.value))}
+            min={5}
+            required
+          />
         </div>
         <div>
-            <label className="block font-medium" htmlFor="">Thời gian bắt đầu</label>
-            <input type="datetime-local" 
+          <label className="block font-medium" htmlFor="startTime">
+            Thời gian bắt đầu
+          </label>
+          <input
+            type="datetime-local"
+            id="startTime"
             className="w-full border border-gray-300 p-2 rounded-md"
             value={startTime}
-            onChange={(e)=>setStartTime(e.target.value)}
-            required/>
+            onChange={(e) => setStartTime(e.target.value)}
+            required
+          />
+        </div>
+        <div>
+          <label className="block font-medium" htmlFor="examType">
+            Loại thi
+          </label>
+          <select
+            id="examType"
+            className="w-full border border-gray-300 p-2 rounded-md"
+            value={examType}
+            onChange={(e) => setExamType(e.target.value)}
+          >
+            <option value="dethi">Đề thi</option>
+            <option value="onthi">Ôn thi</option>
+          </select>
         </div>
         <div className="flex justify-center col-span-2">
-            <button className="h-10 w-full bg-slate-100 border border-gray-300 rounded-md hover:bg-green-500"
-            onClick={handleCreateExam}>Tạo câu hỏi</button>
+          <button
+            type="submit"
+            className="h-10 w-full bg-slate-100 border border-gray-300 rounded-md hover:bg-green-500 disabled:bg-gray-300"
+            disabled={loading}
+          >
+            {loading ? "Đang tạo..." : "Tạo câu hỏi"}
+          </button>
         </div>
       </form>
     </div>
