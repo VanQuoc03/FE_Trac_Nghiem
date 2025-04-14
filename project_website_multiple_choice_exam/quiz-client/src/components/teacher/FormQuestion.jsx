@@ -28,8 +28,8 @@ const FormQuestion = () => {
     }
     setUser(storedUser);
 
-    if (!examData) {
-      setError("Không có dữ liệu đề thi. Vui lòng tạo lại.");
+    if (!examData || !examData.id_dethi || !examData.id_monhoc) {
+      setError("Dữ liệu đề thi không hợp lệ. Vui lòng tạo lại.");
       navigate("/teacher/create-exam");
     }
   }, [navigate, examData]);
@@ -56,6 +56,35 @@ const FormQuestion = () => {
   };
 
   const handleSaveQuestions = async () => {
+    // Validate questions before sending
+    for (const q of questions) {
+      if (!q.text || !q.correctAnswer || !q.options.every((opt) => opt)) {
+        console.log("Validation failed: Incomplete question", q);
+        alert("Mỗi câu hỏi phải có nội dung, đáp án đúng, và 4 lựa chọn đầy đủ.");
+        return;
+      }
+      if (!q.options.includes(q.correctAnswer)) {
+        console.log("Validation failed: Correct answer not in options", {
+          correctAnswer: q.correctAnswer,
+          options: q.options,
+        });
+        alert("Đáp án đúng phải nằm trong các lựa chọn.");
+        return;
+      }
+    }
+  
+    const payload = {
+      examId: examData.id_dethi,
+      questions: questions.map((q) => ({
+        text: q.text,
+        options: q.options,
+        correctAnswer: q.correctAnswer,
+        id_monhoc: examData.id_monhoc,
+      })),
+    };
+  
+    console.log("Sending payload to /api/questions:", payload);
+  
     try {
       const response = await fetch("/api/questions", {
         method: "POST",
@@ -63,28 +92,24 @@ const FormQuestion = () => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${user.token}`,
         },
-        body: JSON.stringify({
-          examId: examData.id_dethi,
-          questions: questions.map((q) => ({
-            text: q.text,
-            options: q.options,
-            correctAnswer: q.correctAnswer,
-            id_monhoc: examData.id_monhoc,
-          })),
-        }),
+        body: JSON.stringify(payload),
       });
-
+  
+      const responseData = await response.json();
+      console.log("Response from /api/questions:", responseData);
+  
       if (response.ok) {
         setIsConfirmModalOpen(true);
       } else {
-        const errorData = await response.json();
-        alert(errorData.message || "Lỗi khi lưu câu hỏi!");
+        console.error("Error from /api/questions:", responseData);
+        alert(responseData.message || "Lỗi khi lưu câu hỏi!");
       }
     } catch (error) {
-      console.error("Lỗi khi lưu câu hỏi:", error);
-      alert("Lỗi khi lưu câu hỏi!");
+      console.error("Lỗi khi lưu câu hỏi:", error.message);
+      alert(`Lỗi khi lưu câu hỏi: ${error.message}`);
     }
   };
+  
 
   const handleFileUpload = async (event, fileType) => {
     const file = event.target.files[0];
@@ -272,37 +297,32 @@ const FormQuestion = () => {
                       )
                     }
                   />
-                  <input
-                    type="radio"
-                    name={`correctAnswer-${
+                </div>
+              ))}
+              <div className="mt-4">
+                <label className="block mb-1 font-medium">Đáp án đúng</label>
+                <input
+                  className="w-full border border-gray-300 p-2 rounded-md"
+                  type="text"
+                  value={
+                    questions[
                       selectedLongQuestion !== null
                         ? selectedLongQuestion
                         : selectedSmallQuestion
-                    }`}
-                    className="ml-2"
-                    checked={
-                      questions[
-                        selectedLongQuestion !== null
-                          ? selectedLongQuestion
-                          : selectedSmallQuestion
-                      ].correctAnswer === opt
-                    }
-                    onChange={() =>
-                      handleChanged(
-                        selectedLongQuestion !== null
-                          ? selectedLongQuestion
-                          : selectedSmallQuestion,
-                        "correctAnswer",
-                        questions[
-                          selectedLongQuestion !== null
-                            ? selectedLongQuestion
-                            : selectedSmallQuestion
-                        ].options[index]
-                      )
-                    }
-                  />
-                </div>
-              ))}
+                    ].correctAnswer
+                  }
+                  placeholder="Nhập đáp án đúng"
+                  onChange={(e) =>
+                    handleChanged(
+                      selectedLongQuestion !== null
+                        ? selectedLongQuestion
+                        : selectedSmallQuestion,
+                      "correctAnswer",
+                      e.target.value
+                    )
+                  }
+                />
+              </div>
             </div>
             <button
               className="bg-blue-400 hover:bg-blue-500 w-full text-white p-2 rounded-md mt-4"

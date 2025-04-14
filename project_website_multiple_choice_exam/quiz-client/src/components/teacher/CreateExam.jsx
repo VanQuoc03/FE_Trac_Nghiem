@@ -35,7 +35,9 @@ const CreateExam = () => {
         }
       } catch (error) {
         console.error("Lỗi khi lấy danh sách môn học:", error);
-        setError(error.response?.data?.message || "Không thể tải danh sách môn học");
+        setError(
+          error.response?.data?.message || "Không thể tải danh sách môn học"
+        );
       }
     };
 
@@ -46,36 +48,38 @@ const CreateExam = () => {
     e.preventDefault();
     setLoading(true);
     setError("");
-
+  
     const user = JSON.parse(localStorage.getItem("user"));
-    const id_dethi = `DT${Date.now()}`;
-    const ngay_tao = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
-
-    // Log input startTime
-    console.log("Input startTime:", startTime);
-
-    // Parse startTime as local time
+    const now = new Date();
+    const pad2 = (n) => String(n).padStart(2, "0");
+    const ngay_tao = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(
+      now.getDate()
+    )} ${pad2(now.getHours())}:${pad2(now.getMinutes())}:${pad2(
+      now.getSeconds()
+    )}`;
+  
     const localStartTime = new Date(startTime);
     if (isNaN(localStartTime.getTime())) {
       setError("Thời gian bắt đầu không hợp lệ!");
       setLoading(false);
       return;
     }
-
-    // Format as YYYY-MM-DD HH:mm:ss (local time)
+  
     const pad = (num) => String(num).padStart(2, "0");
-    const thoigianbatdau = `${localStartTime.getFullYear()}-${pad(localStartTime.getMonth() + 1)}-${pad(localStartTime.getDate())} ${pad(localStartTime.getHours())}:${pad(localStartTime.getMinutes())}:${pad(localStartTime.getSeconds())}`;
-
-    // Calculate end time
+    const thoigianbatdau = `${localStartTime.getFullYear()}-${pad(
+      localStartTime.getMonth() + 1
+    )}-${pad(localStartTime.getDate())} ${pad(localStartTime.getHours())}:${pad(
+      localStartTime.getMinutes()
+    )}:${pad(localStartTime.getSeconds())}`;
+  
     const localEndTime = new Date(localStartTime.getTime() + duration * 60000);
-    const thoigianketthuc = `${localEndTime.getFullYear()}-${pad(localEndTime.getMonth() + 1)}-${pad(localEndTime.getDate())} ${pad(localEndTime.getHours())}:${pad(localEndTime.getMinutes())}:${pad(localEndTime.getSeconds())}`;
-
-    // Log formatted times
-    console.log("thoigianbatdau:", thoigianbatdau);
-    console.log("thoigianketthuc:", thoigianketthuc);
-
+    const thoigianketthuc = `${localEndTime.getFullYear()}-${pad(
+      localEndTime.getMonth() + 1
+    )}-${pad(localEndTime.getDate())} ${pad(localEndTime.getHours())}:${pad(
+      localEndTime.getMinutes()
+    )}:${pad(localEndTime.getSeconds())}`;
+  
     const examData = {
-      id_dethi,
       id_giaovien: user.id,
       id_monhoc: subject,
       tendethi: title,
@@ -85,7 +89,7 @@ const CreateExam = () => {
       thoigianketthuc,
       ngay_tao,
     };
-
+  
     try {
       console.log("Sending examData:", examData);
       const response = await axios.post("/api/exams", examData, {
@@ -94,10 +98,13 @@ const CreateExam = () => {
           Authorization: `Bearer ${user.token}`,
         },
       });
-
+  
       alert("Tạo bài thi thành công!");
       navigate("/teacher/form-question", {
-        state: { numQuestions, examData: { ...examData, id_dethi: response.data.id_dethi } },
+        state: {
+          numQuestions,
+          examData: { ...examData, id_dethi: response.data.exam.id_dethi },
+        },
       });
     } catch (error) {
       console.error("Lỗi khi tạo bài thi:", error);
@@ -109,9 +116,14 @@ const CreateExam = () => {
 
   return (
     <div className="bg-white rounded-lg border border-gray-300 p-4 shadow-md w-[90%] mx-auto mt-10">
-      <h2 className="text-4xl flex justify-center m-5 font-medium">Tạo bài thi</h2>
+      <h2 className="text-4xl flex justify-center m-5 font-medium">
+        Tạo bài thi
+      </h2>
       {error && <p className="text-red-500 text-center mb-4">{error}</p>}
-      <form onSubmit={handleCreateExam} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <form
+        onSubmit={handleCreateExam}
+        className="grid grid-cols-1 md:grid-cols-2 gap-4"
+      >
         <div>
           <label className="block font-medium" htmlFor="title">
             Tiêu đề

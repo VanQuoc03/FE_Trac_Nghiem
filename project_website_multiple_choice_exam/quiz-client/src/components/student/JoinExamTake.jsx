@@ -90,14 +90,6 @@ const JoinExamTake = () => {
           dapan: normalizeDapan(question.dapan),
         }));
 
-        console.log("Đáp án đúng của đề thi:");
-        normalizedQuestions.forEach((q, index) => {
-          const dapanContent = ["A", "B", "C", "D"].includes(q.dapan)
-            ? getAnswerContent(q.dapan, q.options)
-            : q.dapan;
-          console.log(`Câu ${index + 1} (ID: ${q.id_cauhoi}): Đáp án đúng = ${dapanContent} (Giá trị: ${q.dapan})`);
-        });
-
         setExam(examData);
         setTimeLeft(examData.thoigianthi * 60);
         setQuestions(normalizedQuestions);
@@ -139,6 +131,9 @@ const JoinExamTake = () => {
 
   // Phát hiện vi phạm
   useEffect(() => {
+    // Không cần xử lý vi phạm nếu bài thi đã nộp và có điểm
+    if (score !== null) return;
+
     const handleVisibilityChange = () => {
       if (document.hidden) {
         setViolation(true);
@@ -169,7 +164,7 @@ const JoinExamTake = () => {
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("contextmenu", handleContextMenu);
     };
-  }, []);
+  }, [score]);
 
   // Xử lý vi phạm
   const handleViolation = async () => {
@@ -207,7 +202,6 @@ const JoinExamTake = () => {
     setAnswers((prev) => {
       const answerContent = getAnswerContent(answer, options);
       const newAnswers = { ...prev, [questionId]: answerContent };
-      console.log(`Câu hỏi ${questionId}: Đáp án đã chọn = ${answerContent} (Giá trị gốc: ${answer})`);
       return newAnswers;
     });
   };
@@ -234,31 +228,21 @@ const JoinExamTake = () => {
       let correctCount = 0;
       const totalQuestions = questions.length;
 
-      console.log("Kiểm tra đáp án khi nộp bài:");
-      questions.forEach((question, index) => {
+      questions.forEach((question) => {
         const selectedAnswer = answers[question.id_cauhoi] || "Chưa chọn";
         const correctAnswer = ["A", "B", "C", "D"].includes(question.dapan)
           ? getAnswerContent(question.dapan, question.options)
           : question.dapan;
         const isCorrect = selectedAnswer === correctAnswer;
-        console.log(
-          `Câu ${index + 1} (ID: ${question.id_cauhoi}): ` +
-            `Đáp án chọn = ${selectedAnswer}, ` +
-            `Đáp án đúng = ${correctAnswer}, ` +
-            `Kết quả = ${isCorrect ? "Đúng" : "Sai"}`
-        );
         if (isCorrect) {
           correctCount++;
         }
       });
 
       const calculatedScore = totalQuestions > 0 ? (correctCount / totalQuestions) * 10 : 0;
-      console.log(`Tổng số câu đúng: ${correctCount}/${totalQuestions}`);
-      console.log(`Điểm tính được: ${calculatedScore.toFixed(1)}`);
-
       setScore(calculatedScore);
 
-      const id_baithi = `BT${uuidv4()}`; // Generate UUID-based id_baithi
+      const id_baithi = `BT${uuidv4()}`;
       const payload = {
         id_baithi,
         id_hocsinh,
@@ -267,42 +251,12 @@ const JoinExamTake = () => {
         trangthai: "hoanthanh",
         diemthi: calculatedScore,
       };
-      console.log("Payload gửi lên API /api/baithi:", payload);
 
-      const response = await axios.post("/api/baithi", payload, {
+      await axios.post("/api/baithi", payload, {
         headers: { Authorization: `Bearer ${user.token}` },
       });
-
-      console.log("Response từ API /api/baithi:", response.data);
-      navigate("/");
     } catch (err) {
       console.error("Error submitting exam:", err);
-      if (err.response?.status === 401) {
-        setError("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.");
-        navigate("/login");
-      } else if (err.response?.status === 409) {
-        setError("Bạn đã nộp bài thi này rồi.");
-        navigate("/");
-      } else if (err.response?.status === 400 && err.response.data.message.includes("id_baithi")) {
-        setError("Lỗi định dạng mã bài thi. Vui lòng thử lại.");
-      } else if (err.response?.status === 500) {
-        setError("Lỗi server khi nộp bài. Vui lòng thử lại sau.");
-      } else {
-        try {
-          const checkResponse = await axios.get(`/api/baithi/${id_hocsinh}/${id_dethi}`, {
-            headers: { Authorization: `Bearer ${user.token}` },
-          });
-          if (checkResponse.data && checkResponse.data.diemthi === calculatedScore) {
-            console.log("Dữ liệu đã được lưu, bỏ qua lỗi.");
-            navigate("/");
-          } else {
-            setError("Không thể nộp bài. Vui lòng thử lại.");
-          }
-        } catch (checkErr) {
-          console.error("Error checking saved exam:", checkErr);
-          setError("Không thể nộp bài. Vui lòng thử lại.");
-        }
-      }
     }
   };
 
@@ -320,7 +274,7 @@ const JoinExamTake = () => {
         </p>
         <button
           className="mt-6 bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/history-exam")}
         >
           Về Trang Chủ
         </button>
@@ -329,7 +283,7 @@ const JoinExamTake = () => {
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="p-6 max-w-4xl mx-auto pt-24">
       <div className="bg-white shadow-md rounded-lg p-6 mb-6">
         <div className="flex justify-between items-center mb-4">
           <div>
@@ -362,7 +316,7 @@ const JoinExamTake = () => {
           </p>
           <button
             className="mt-6 bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/history-exam")}
           >
             Về Trang Chủ
           </button>
@@ -383,10 +337,7 @@ const JoinExamTake = () => {
                           type="radio"
                           name={`question-${question.id_cauhoi}`}
                           value={String.fromCharCode(65 + idx)} // A, B, C, D
-                          checked={
-                            answers[question.id_cauhoi] ===
-                            getAnswerContent(String.fromCharCode(65 + idx), question.options)
-                          }
+                          checked={answers[question.id_cauhoi] === getAnswerContent(String.fromCharCode(65 + idx), question.options)}
                           onChange={() =>
                             handleAnswerChange(question.id_cauhoi, String.fromCharCode(65 + idx), question.options)
                           }

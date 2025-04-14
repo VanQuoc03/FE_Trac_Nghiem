@@ -78,8 +78,8 @@ const JoinExam = () => {
   if (error) return <div className="text-center p-6 text-red-500">{error}</div>;
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4 text-center">Tham Gia Thi</h1>
+    <div className="p-6 max-w-6xl mx-auto pt-24">
+      <h1 className="text-2xl font-bold mb-4 text-center">Lựa Chọn Đề Thi</h1>
       {exams.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {exams.map((exam) => (

@@ -23,6 +23,8 @@ import EditExam from "./components/teacher/exam/EditExam";
 import BaiThiTheoNgay from "./components/teacher/BaiThiTheoNgay";
 import Login from "./components/Login";
 import { AppContextProvider } from "./Context/AppContext";
+import ThongBao from "./components/student/ThongBao";
+import Home from "./components/student/Home";
 
 // Placeholder components for student features
 const SubjectsPageStudent = () => <div className="p-6">Trang Môn Thi (Chưa triển khai)</div>;
@@ -84,14 +86,15 @@ export default function App() {
               </ProtectedRoute>
             }
           >
-            <Route index element={<ViewSv />} />
+            <Route index element={<Home />} />
+            <Route path="history-exam" element={<ViewSv />} />
             <Route path="detail/:id" element={<Detail />} />
             <Route path="practice" element={<PracticePage />} />
             <Route path="practice/take/:id_dethi" element={<PracticeTake />} />
             <Route path="join-exam" element={<JoinExam />} />
             <Route path="join-exam/take/:id_dethi" element={<JoinExamTake />} />
             <Route path="subjects" element={<SubjectsPageStudent />} />
-            <Route path="notifications" element={<NotificationsPage />} />
+            <Route path="notifications" element={<ThongBao />} />
             <Route path="contact" element={<ContactPage />} />
             <Route path="profile" element={<ProfilePage />} />
             <Route path="settings" element={<SettingsPage />} />
