@@ -8,7 +8,7 @@ import PracticePage from "./components/student/PracticePage";
 import PracticeTake from "./components/student/PracticeTake";
 import JoinExam from "./components/student/JoinExam";
 import JoinExamTake from "./components/student/JoinExamTake";
-import ProfilePage from "./components/student/ProfilePage"; // Import the new ProfilePage
+import ProfilePage from "./components/student/ProfilePage";
 import HomePage from "./components/teacher/HomePage";
 import ExamDetail from "./components/teacher/exam/ExamDetail";
 import SubjectsPage from "./components/teacher/SubjectsPage";
@@ -31,7 +31,7 @@ const ContactPage = () => <div className="p-6">Trang Liên Hệ (Chưa triển k
 const SettingsPage = () => <div className="p-6">Trang Cài Đặt (Chưa triển khai)</div>;
 
 export default function App() {
-  const [user, setUser] = useState(null); // { role: "student" | "teacher", token, id }
+  const [user, setUser] = useState(null); // { role: "student" | "teacher", token, id, tendangnhap }
 
   useEffect(() => {
     // Check local storage for existing user session
@@ -48,7 +48,7 @@ export default function App() {
 
   const handleLogout = () => {
     setUser(null);
-    localStorage.removeItem("user");
+    localStorage.clear(); // Xóa toàn bộ localStorage
   };
 
   // Redirect to login if not authenticated
@@ -93,7 +93,7 @@ export default function App() {
             <Route path="subjects" element={<SubjectsPageStudent />} />
             <Route path="notifications" element={<NotificationsPage />} />
             <Route path="contact" element={<ContactPage />} />
-            <Route path="profile" element={<ProfilePage />} /> {/* Use the new ProfilePage */}
+            <Route path="profile" element={<ProfilePage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
 

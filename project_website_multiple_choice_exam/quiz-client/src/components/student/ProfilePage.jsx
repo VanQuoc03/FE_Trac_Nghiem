@@ -10,28 +10,72 @@ const ProfilePage = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
+  // Hàm giải mã token để lấy id_hocsinh và tendangnhap
+  const getUserInfoFromToken = (token) => {
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      return {
+        id_hocsinh: payload.id_hocsinh,
+        tendangnhap: payload.tendangnhap,
+      };
+    } catch (err) {
+      console.error("Error decoding token:", err);
+      return null;
+    }
+  };
+
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         const storedUser = JSON.parse(localStorage.getItem("user"));
-        if (!storedUser || storedUser.role !== "student") {
+        if (!storedUser || storedUser.role !== "student" || !storedUser.token) {
+          setError("Vui lòng đăng nhập với tài khoản học sinh.");
           navigate("/login");
           return;
         }
 
-        // Optionally fetch additional user data from the backend
-        const response = await axios.get(`/api/users/${storedUser.id}`, {
+        // Lấy thông tin từ token
+        const tokenInfo = getUserInfoFromToken(storedUser.token);
+        if (!tokenInfo) {
+          setError("Token không hợp lệ. Vui lòng đăng nhập lại.");
+          navigate("/login");
+          return;
+        }
+
+        // Gọi API để lấy thông tin học sinh
+        const response = await axios.get(`/hocsinh/${tokenInfo.id_hocsinh}`, {
           headers: { Authorization: `Bearer ${storedUser.token}` },
         });
-        setUser(response.data);
-        setUpdatedUsername(response.data.tendangnhap);
+
+        setUser({
+          id_hocsinh: tokenInfo.id_hocsinh,
+          tendangnhap: response.data.tendangnhap || tokenInfo.tendangnhap,
+          role: storedUser.role,
+          // Lưu các trường khác từ API nếu có (ví dụ: ten_hocsinh, email, v.v.)
+          ...response.data,
+        });
+        setUpdatedUsername(response.data.tendangnhap || tokenInfo.tendangnhap);
       } catch (err) {
         console.error("Error fetching user data:", err);
-        setError("Không thể tải thông tin tài khoản.");
-        // Fallback to localStorage data if backend fetch fails
-        const storedUser = JSON.parse(localStorage.getItem("user"));
-        setUser(storedUser);
-        setUpdatedUsername(storedUser.tendangnhap);
+        if (err.response?.status === 401) {
+          setError("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.");
+          navigate("/login");
+        } else if (err.response?.status === 500) {
+          setError("Lỗi server khi tải thông tin. Vui lòng thử lại.");
+          // Fallback to token data
+          const storedUser = JSON.parse(localStorage.getItem("user"));
+          const tokenInfo = getUserInfoFromToken(storedUser.token);
+          if (tokenInfo) {
+            setUser({
+              id_hocsinh: tokenInfo.id_hocsinh,
+              tendangnhap: tokenInfo.tendangnhap,
+              role: storedUser.role,
+            });
+            setUpdatedUsername(tokenInfo.tendangnhap);
+          }
+        } else {
+          setError("Không thể tải thông tin tài khoản.");
+        }
       } finally {
         setLoading(false);
       }
@@ -48,21 +92,44 @@ const ProfilePage = () => {
   const handleUpdateProfile = async () => {
     try {
       const storedUser = JSON.parse(localStorage.getItem("user"));
+      const tokenInfo = getUserInfoFromToken(storedUser.token);
+      if (!tokenInfo) {
+        setError("Token không hợp lệ. Vui lòng đăng nhập lại.");
+        navigate("/login");
+        return;
+      }
+
+      // Giả sử có API PUT để cập nhật thông tin học sinh
       const response = await axios.put(
-        `/api/users/${storedUser.id}`,
+        `/hocsinh/${tokenInfo.id_hocsinh}`,
         { tendangnhap: updatedUsername },
         { headers: { Authorization: `Bearer ${storedUser.token}` } }
       );
 
-      // Update localStorage and state with the new username
-      const updatedUser = { ...storedUser, tendangnhap: response.data.tendangnhap };
-      setUser(updatedUser);
+      // Cập nhật localStorage và state
+      const updatedUser = {
+        ...storedUser,
+        tendangnhap: response.data.tendangnhap || updatedUsername,
+      };
+      setUser({
+        id_hocsinh: tokenInfo.id_hocsinh,
+        tendangnhap: response.data.tendangnhap || updatedUsername,
+        role: storedUser.role,
+        ...response.data,
+      });
       localStorage.setItem("user", JSON.stringify(updatedUser));
       setEditMode(false);
       alert("Cập nhật thông tin thành công!");
     } catch (err) {
       console.error("Error updating profile:", err);
-      setError("Không thể cập nhật thông tin. Vui lòng thử lại.");
+      if (err.response?.status === 401) {
+        setError("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.");
+        navigate("/login");
+      } else if (err.response?.status === 500) {
+        setError("Lỗi server khi cập nhật thông tin. Vui lòng thử lại.");
+      } else {
+        setError("Không thể cập nhật thông tin. Vui lòng thử lại.");
+      }
     }
   };
 
@@ -76,7 +143,7 @@ const ProfilePage = () => {
       <div className="bg-white p-6 rounded-lg shadow-md">
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700">Mã học sinh:</label>
-          <p className="mt-1 text-lg">{user.id}</p>
+          <p className="mt-1 text-lg">{user.id_hocsinh}</p>
         </div>
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700">Tên đăng nhập:</label>

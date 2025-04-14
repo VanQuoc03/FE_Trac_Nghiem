@@ -1,15 +1,27 @@
-import React, { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { CiSearch } from "react-icons/ci";
 import { FaRegUser } from "react-icons/fa";
 import { IoMdArrowDropdown } from "react-icons/io";
-import { Link, useLocation, Outlet } from "react-router-dom";
+import { Link, useLocation, Outlet, useNavigate } from "react-router-dom";
 
 const NavbarTeacher = ({ onLogout }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [hovered, setHovered] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [teacherMenuOpen, setTeacherMenuOpen] = useState(false);
   const menuRef = useRef(null);
+
+  // Lấy thông tin người dùng từ localStorage
+  const user = JSON.parse(localStorage.getItem("user"));
+  const username = user?.tendangnhap || "Giáo Viên";
+
+  // Kiểm tra trạng thái đăng nhập
+  useEffect(() => {
+    if (!user || user.role !== "teacher") {
+      navigate("/login");
+    }
+  }, [navigate, user]);
 
   const handleClickOutside = (event) => {
     if (menuRef.current && !menuRef.current.contains(event.target)) {
@@ -18,18 +30,23 @@ const NavbarTeacher = ({ onLogout }) => {
     }
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
+  const handleLogout = () => {
+    localStorage.clear(); // Xóa toàn bộ localStorage
+    onLogout();
+    navigate("/login");
+  };
+
   const navItems = [
     { path: "/teacher", label: "Trang Chủ" },
     { path: "/teacher/exams", label: "Thi Thử" },
     { path: "/teacher/subjects", label: "Môn Thi" },
-    // Removed undefined routes: "Ôn Tập", "Thông Báo", "Liên Hệ"
   ];
 
   return (
@@ -64,10 +81,11 @@ const NavbarTeacher = ({ onLogout }) => {
           </div>
           <div className="relative flex items-center gap-3" ref={menuRef}>
             <button
-              className="bg-white px-3 py-1 rounded-full text-sm flex items-center justify-around w-[50px] h-[50px]"
+              className="bg-white px-3 py-1 rounded-full text-sm flex items-center justify-around w-[100px] h-[50px]"
               onClick={() => setMenuOpen(!menuOpen)}
             >
               <FaRegUser className="size-7" />
+              <span>{username}</span>
             </button>
             <IoMdArrowDropdown />
             {menuOpen && (
@@ -129,15 +147,11 @@ const NavbarTeacher = ({ onLogout }) => {
                       >
                         Bài thi theo ngày
                       </Link>
-                      {/* Removed undefined route: "Thống kê điểm số" */}
                     </div>
                   )}
                 </div>
                 <button
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onLogout();
-                  }}
+                  onClick={handleLogout}
                   className="block p-2 hover:bg-gray-200 w-full text-left"
                 >
                   Đăng xuất
@@ -147,7 +161,7 @@ const NavbarTeacher = ({ onLogout }) => {
           </div>
         </div>
       </nav>
-      <Outlet /> {/* This renders the child routes (e.g., CreateExam, HomePage) */}
+      <Outlet />
     </>
   );
 };

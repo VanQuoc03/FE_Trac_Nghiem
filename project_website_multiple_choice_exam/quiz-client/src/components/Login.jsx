@@ -2,7 +2,7 @@ import { useState } from "react";
 import axios from "axios";
 
 export default function Login({ onLogin }) {
-  const [role, setRole] = useState("student"); // Default to student
+  const [role, setRole] = useState("student");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -29,7 +29,10 @@ export default function Login({ onLogin }) {
           role,
           token,
           id: role === "student" ? response.data.id_hocsinh : response.data.id_giaovien,
+          tendangnhap: username, // Lưu tên đăng nhập
         };
+        // Lưu userData vào localStorage
+        localStorage.setItem("user", JSON.stringify(userData));
         onLogin(userData);
       } else {
         setError("Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.");
@@ -47,7 +50,6 @@ export default function Login({ onLogin }) {
         <h2 className="text-2xl font-bold mb-6 text-center">Đăng Nhập</h2>
         {error && <p className="text-red-500 mb-4 text-center">{error}</p>}
         <form onSubmit={handleSubmit}>
-          {/* Role Selection */}
           <div className="mb-4">
             <label className="block text-sm font-medium mb-2">Vai trò</label>
             <select
@@ -59,8 +61,6 @@ export default function Login({ onLogin }) {
               <option value="teacher">Giáo Viên</option>
             </select>
           </div>
-
-          {/* Username */}
           <div className="mb-4">
             <label className="block text-sm font-medium mb-2">Tên đăng nhập</label>
             <input
@@ -72,8 +72,6 @@ export default function Login({ onLogin }) {
               required
             />
           </div>
-
-          {/* Password */}
           <div className="mb-6">
             <label className="block text-sm font-medium mb-2">Mật khẩu</label>
             <input
@@ -85,8 +83,6 @@ export default function Login({ onLogin }) {
               required
             />
           </div>
-
-          {/* Submit Button */}
           <button
             type="submit"
             disabled={loading}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { v4 as uuidv4 } from "uuid"; // Import UUID
 
 const JoinExamTake = () => {
   const { id_dethi } = useParams();
@@ -14,22 +15,47 @@ const JoinExamTake = () => {
   const [score, setScore] = useState(null);
   const [violation, setViolation] = useState(false);
 
+  // Hàm giải mã token để lấy id_hocsinh
+  const getIdHocSinhFromToken = (token) => {
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      return payload.id_hocsinh;
+    } catch (err) {
+      console.error("Error decoding token:", err);
+      return null;
+    }
+  };
+
+  // Hàm chuẩn hóa đáp án đúng
+  const normalizeDapan = (dapan) => {
+    if (!dapan) return "";
+    if (dapan.startsWith("Dapan ")) {
+      return dapan.replace("Dapan ", "").trim();
+    }
+    return dapan.trim();
+  };
+
+  // Hàm lấy nội dung đáp án từ options dựa trên ký tự (A, B, C, D)
+  const getAnswerContent = (answer, options) => {
+    if (!answer || !options || options.length === 0) return "Không xác định";
+    const index = ["A", "B", "C", "D"].indexOf(answer);
+    return index >= 0 && index < options.length ? options[index] : answer;
+  };
+
+  // Lấy thông tin đề thi và câu hỏi
   useEffect(() => {
     const fetchExamAndQuestions = async () => {
       try {
         const user = JSON.parse(localStorage.getItem("user"));
-        console.log("User data:", user);
-        if (!user || user.role !== "student") {
-          console.log("Invalid user or role, redirecting to login");
+        if (!user || user.role !== "student" || !user.token) {
+          setError("Vui lòng đăng nhập với tài khoản học sinh.");
           navigate("/login");
           return;
         }
 
-        console.log("Fetching exam for id_dethi:", id_dethi);
-        const examResponse = await axios.get(`/api/dethi/dethi/${id_dethi}`, {
+        const examResponse = await axios.get(`/api/dethi/${id_dethi}`, {
           headers: { Authorization: `Bearer ${user.token}` },
         });
-        console.log("Exam response:", examResponse.data);
 
         const examData = examResponse.data;
         if (examData.trangthai !== "dethi") {
@@ -38,16 +64,10 @@ const JoinExamTake = () => {
           return;
         }
 
-        // Thời gian hiện tại và thời gian đề thi (múi giờ cục bộ)
         const now = new Date();
         const start = new Date(examData.thoigianbatdau);
         const end = new Date(examData.thoigianketthuc);
 
-        console.log("Current time:", now.toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" }));
-        console.log("Exam start:", examData.thoigianbatdau, start.toLocaleString("vi-VN"));
-        console.log("Exam end:", examData.thoigianketthuc, end.toLocaleString("vi-VN"));
-
-        // Kiểm tra thời gian hợp lệ
         if (isNaN(start.getTime()) || isNaN(end.getTime())) {
           setError("Thời gian đề thi không hợp lệ.");
           setLoading(false);
@@ -65,21 +85,31 @@ const JoinExamTake = () => {
           return;
         }
 
+        const normalizedQuestions = (examData.questions || []).map((question) => ({
+          ...question,
+          dapan: normalizeDapan(question.dapan),
+        }));
+
+        console.log("Đáp án đúng của đề thi:");
+        normalizedQuestions.forEach((q, index) => {
+          const dapanContent = ["A", "B", "C", "D"].includes(q.dapan)
+            ? getAnswerContent(q.dapan, q.options)
+            : q.dapan;
+          console.log(`Câu ${index + 1} (ID: ${q.id_cauhoi}): Đáp án đúng = ${dapanContent} (Giá trị: ${q.dapan})`);
+        });
+
         setExam(examData);
         setTimeLeft(examData.thoigianthi * 60);
-        setQuestions(examData.questions || []); // Route mới trả questions trực tiếp
+        setQuestions(normalizedQuestions);
       } catch (err) {
         console.error("Error fetching exam:", err);
         if (err.response?.status === 404) {
-          setError(`Không tìm thấy đề thi với mã ${id_dethi}. Vui lòng kiểm tra lại mã đề thi hoặc liên hệ giáo viên.`);
+          setError(`Không tìm thấy đề thi với mã ${id_dethi}.`);
         } else if (err.response?.status === 401) {
           setError("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.");
           navigate("/login");
         } else {
-          setError(
-            err.response?.data?.message ||
-              `Không thể tải bài thi. Lỗi: ${err.message}`
-          );
+          setError("Không thể tải bài thi.");
         }
       } finally {
         setLoading(false);
@@ -89,7 +119,7 @@ const JoinExamTake = () => {
     fetchExamAndQuestions();
   }, [id_dethi, navigate]);
 
-  // Timer
+  // Quản lý thời gian
   useEffect(() => {
     if (timeLeft <= 0 || score !== null || violation) return;
 
@@ -107,7 +137,7 @@ const JoinExamTake = () => {
     return () => clearInterval(timer);
   }, [timeLeft, score, violation]);
 
-  // Restrictions
+  // Phát hiện vi phạm
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden) {
@@ -141,82 +171,155 @@ const JoinExamTake = () => {
     };
   }, []);
 
+  // Xử lý vi phạm
   const handleViolation = async () => {
     try {
       const user = JSON.parse(localStorage.getItem("user"));
+      const id_hocsinh = getIdHocSinhFromToken(user.token);
+      if (!id_hocsinh) {
+        setError("Không thể xác định học sinh. Vui lòng đăng nhập lại.");
+        navigate("/login");
+        return;
+      }
+
+      const id_baithi = `BT${uuidv4()}`; // Generate UUID-based id_baithi
       await axios.post(
         "/api/baithi",
         {
-          id_hocsinh: user.id,
-          id_dethi: id_dethi,
-          ngaylam: new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" }),
+          id_baithi,
+          id_hocsinh,
+          id_dethi,
+          ngaylam: new Date().toISOString(),
           trangthai: "hoanthanh",
           diemthi: 0,
         },
-        {
-          headers: { Authorization: `Bearer ${user.token}` },
-        }
+        { headers: { Authorization: `Bearer ${user.token}` } }
       );
       setScore(0);
     } catch (err) {
       console.error("Error saving violation score:", err);
+      setError("Không thể lưu điểm vi phạm.");
     }
   };
 
-  const handleAnswerChange = (questionId, answer) => {
-    setAnswers((prev) => ({ ...prev, [questionId]: answer }));
+  // Lưu đáp án của học sinh
+  const handleAnswerChange = (questionId, answer, options) => {
+    setAnswers((prev) => {
+      const answerContent = getAnswerContent(answer, options);
+      const newAnswers = { ...prev, [questionId]: answerContent };
+      console.log(`Câu hỏi ${questionId}: Đáp án đã chọn = ${answerContent} (Giá trị gốc: ${answer})`);
+      return newAnswers;
+    });
   };
 
+  // Nộp bài và tính điểm
   const handleSubmit = async () => {
     if (violation) return;
 
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user || !user.token) {
+      setError("Không thể xác định học sinh. Vui lòng đăng nhập lại.");
+      navigate("/login");
+      return;
+    }
+
+    const id_hocsinh = getIdHocSinhFromToken(user.token);
+    if (!id_hocsinh) {
+      setError("Không thể xác định học sinh. Vui lòng đăng nhập lại.");
+      navigate("/login");
+      return;
+    }
+
     try {
-      const user = JSON.parse(localStorage.getItem("user"));
       let correctCount = 0;
       const totalQuestions = questions.length;
 
-      questions.forEach((question) => {
-        if (answers[question.id_cauhoi] === question.dapan) {
+      console.log("Kiểm tra đáp án khi nộp bài:");
+      questions.forEach((question, index) => {
+        const selectedAnswer = answers[question.id_cauhoi] || "Chưa chọn";
+        const correctAnswer = ["A", "B", "C", "D"].includes(question.dapan)
+          ? getAnswerContent(question.dapan, question.options)
+          : question.dapan;
+        const isCorrect = selectedAnswer === correctAnswer;
+        console.log(
+          `Câu ${index + 1} (ID: ${question.id_cauhoi}): ` +
+            `Đáp án chọn = ${selectedAnswer}, ` +
+            `Đáp án đúng = ${correctAnswer}, ` +
+            `Kết quả = ${isCorrect ? "Đúng" : "Sai"}`
+        );
+        if (isCorrect) {
           correctCount++;
         }
       });
 
       const calculatedScore = totalQuestions > 0 ? (correctCount / totalQuestions) * 10 : 0;
+      console.log(`Tổng số câu đúng: ${correctCount}/${totalQuestions}`);
+      console.log(`Điểm tính được: ${calculatedScore.toFixed(1)}`);
+
       setScore(calculatedScore);
 
-      await axios.post(
-        "/api/baithi",
-        {
-          id_hocsinh: user.id,
-          id_dethi: id_dethi,
-          ngaylam: new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" }),
-          trangthai: "hoanthanh",
-          diemthi: calculatedScore,
-        },
-        {
-          headers: { Authorization: `Bearer ${user.token}` },
-        }
-      );
+      const id_baithi = `BT${uuidv4()}`; // Generate UUID-based id_baithi
+      const payload = {
+        id_baithi,
+        id_hocsinh,
+        id_dethi,
+        ngaylam: new Date().toISOString(),
+        trangthai: "hoanthanh",
+        diemthi: calculatedScore,
+      };
+      console.log("Payload gửi lên API /api/baithi:", payload);
+
+      const response = await axios.post("/api/baithi", payload, {
+        headers: { Authorization: `Bearer ${user.token}` },
+      });
+
+      console.log("Response từ API /api/baithi:", response.data);
+      navigate("/");
     } catch (err) {
       console.error("Error submitting exam:", err);
-      setError("Không thể nộp bài.");
+      if (err.response?.status === 401) {
+        setError("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.");
+        navigate("/login");
+      } else if (err.response?.status === 409) {
+        setError("Bạn đã nộp bài thi này rồi.");
+        navigate("/");
+      } else if (err.response?.status === 400 && err.response.data.message.includes("id_baithi")) {
+        setError("Lỗi định dạng mã bài thi. Vui lòng thử lại.");
+      } else if (err.response?.status === 500) {
+        setError("Lỗi server khi nộp bài. Vui lòng thử lại sau.");
+      } else {
+        try {
+          const checkResponse = await axios.get(`/api/baithi/${id_hocsinh}/${id_dethi}`, {
+            headers: { Authorization: `Bearer ${user.token}` },
+          });
+          if (checkResponse.data && checkResponse.data.diemthi === calculatedScore) {
+            console.log("Dữ liệu đã được lưu, bỏ qua lỗi.");
+            navigate("/");
+          } else {
+            setError("Không thể nộp bài. Vui lòng thử lại.");
+          }
+        } catch (checkErr) {
+          console.error("Error checking saved exam:", checkErr);
+          setError("Không thể nộp bài. Vui lòng thử lại.");
+        }
+      }
     }
   };
 
+  // Giao diện hiển thị
   if (loading) return <div className="text-center p-6">Đang tải...</div>;
   if (error) return <div className="text-center p-6 text-red-500">{error}</div>;
 
   if (violation) {
     return (
       <div className="text-center p-6">
-        <h2 className="text-xl font-semibold text-red-500">
-          Bạn đã vi phạm quy chế thi (chuyển tab, copy-paste, hoặc mở widget).
-        </h2>
+        <h2 className="text-2xl font-semibold text-red-500">Vi phạm quy chế thi</h2>
+        <p className="mt-4">Bạn đã chuyển tab hoặc thực hiện hành vi không được phép.</p>
         <p className="mt-2">
           <strong>Điểm số:</strong> 0/10
         </p>
         <button
-          className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          className="mt-6 bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
           onClick={() => navigate("/")}
         >
           Về Trang Chủ
@@ -227,87 +330,90 @@ const JoinExamTake = () => {
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <div className="flex justify-between mb-4">
-        <div>
-          <p>
-            <strong>Họ và tên:</strong> {JSON.parse(localStorage.getItem("user"))?.id || "N/A"}
-          </p>
-          <p>
-            <strong>Bài thi:</strong> {exam?.tendethi || "N/A"}
-          </p>
-          <p>
-            <strong>Môn học:</strong> {exam?.tenmonhoc || "N/A"}
-          </p>
-          <p>
-            <strong>Giáo viên:</strong> {exam?.ten_giaovien || "N/A"}
-          </p>
-        </div>
-        <div className="text-right">
-          <p>
-            <strong>Thời gian còn lại:</strong>{" "}
-            {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, "0")}
-          </p>
+      <div className="bg-white shadow-md rounded-lg p-6 mb-6">
+        <div className="flex justify-between items-center mb-4">
+          <div>
+            <h2 className="text-xl font-bold">{exam?.tendethi || "N/A"}</h2>
+            <p>
+              <strong>Môn học:</strong> {exam?.tenmonhoc || "N/A"}
+            </p>
+            <p>
+              <strong>Giáo viên:</strong> {exam?.ten_giaovien || "N/A"}
+            </p>
+            <p>
+              <strong>Mã học sinh:</strong>{" "}
+              {getIdHocSinhFromToken(JSON.parse(localStorage.getItem("user"))?.token) || "N/A"}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-lg font-semibold">
+              Thời gian còn lại: {Math.floor(timeLeft / 60)}:
+              {(timeLeft % 60).toString().padStart(2, "0")}
+            </p>
+          </div>
         </div>
       </div>
 
       {score !== null ? (
-        <div className="text-center">
-          <h2 className="text-xl font-semibold mb-4">Kết quả</h2>
-          <p>
+        <div className="text-center bg-green-100 p-6 rounded-lg">
+          <h2 className="text-2xl font-semibold mb-4">Kết quả bài thi</h2>
+          <p className="text-lg">
             <strong>Điểm số:</strong> {score.toFixed(1)}/10
           </p>
           <button
-            className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            className="mt-6 bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
             onClick={() => navigate("/")}
           >
             Về Trang Chủ
           </button>
         </div>
       ) : (
-        <>
+        <div>
           {questions.length > 0 ? (
             questions.map((question, index) => (
-              <div key={question.id_cauhoi} className="mb-6">
-                <p className="font-semibold">
-                  Câu hỏi {index + 1}: {question.noidungcauhoi}
+              <div key={question.id_cauhoi} className="bg-white shadow-md rounded-lg p-4 mb-4">
+                <p className="font-semibold text-lg">
+                  Câu {index + 1}: {question.noidungcauhoi}
                 </p>
-                {question.options && question.options.length > 0 ? (
-                  question.options.map((option, idx) => (
-                    <label key={idx} className="block mt-2 flex items-center">
-                      <input
-                        type="radio"
-                        name={`question-${question.id_cauhoi}`}
-                        value={String.fromCharCode(65 + idx)} // A, B, C, D
-                        onChange={() => handleAnswerChange(question.id_cauhoi, String.fromCharCode(65 + idx))}
-                        className="mr-2"
-                      />
-                      <span className="mr-2">{String.fromCharCode(65 + idx)}</span>
-                      {option}
-                    </label>
-                  ))
-                ) : (
-                  <p className="text-red-500">Không có đáp án cho câu hỏi này.</p>
-                )}
+                <div className="mt-4">
+                  {question.options && question.options.length > 0 ? (
+                    question.options.map((option, idx) => (
+                      <label key={idx} className="block mb-2 flex items-center">
+                        <input
+                          type="radio"
+                          name={`question-${question.id_cauhoi}`}
+                          value={String.fromCharCode(65 + idx)} // A, B, C, D
+                          checked={
+                            answers[question.id_cauhoi] ===
+                            getAnswerContent(String.fromCharCode(65 + idx), question.options)
+                          }
+                          onChange={() =>
+                            handleAnswerChange(question.id_cauhoi, String.fromCharCode(65 + idx), question.options)
+                          }
+                          className="mr-2 h-5 w-5"
+                        />
+                        <span className="font-medium mr-2">{String.fromCharCode(65 + idx)}.</span>
+                        {option}
+                      </label>
+                    ))
+                  ) : (
+                    <p className="text-red-500">Không có đáp án cho câu hỏi này.</p>
+                  )}
+                </div>
               </div>
             ))
           ) : (
-            <p className="text-center">Không có câu hỏi nào cho đề thi này.</p>
+            <p className="text-center text-gray-600">Không có câu hỏi nào cho đề thi này.</p>
           )}
-          <div className="flex justify-between">
+          <div className="flex justify-end mt-6">
             <button
-              className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
-              onClick={() => navigate("/")}
-            >
-              Về Trang Chủ
-            </button>
-            <button
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
               onClick={handleSubmit}
             >
               Nộp Bài
             </button>
           </div>
-        </>
+        </div>
       )}
     </div>
   );
