@@ -42,9 +42,26 @@ export default function ViewSv() {
       (searchDate ? formatDate(item.ngaylam) === searchDate : true)
   );
 
+  // Pagination logic
+  const [currentPage, setCurrentPage] = useState(1); // Trang hiện tại
+  const [itemsPerPage] = useState(10); // Số mục mỗi trang
+
+  const indexOfLastItem = currentPage * itemsPerPage; // Vị trí của mục cuối cùng trên trang
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage; // Vị trí của mục đầu tiên trên trang
+  const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem); // Dữ liệu hiển thị trên trang hiện tại
+
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage); // Tổng số trang
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+  };
 
   return (
-    <div className="p-6 max-w-6xl mx-auto font-sans">
+    <div className="p-6 max-w-6xl mx-auto font-sans pt-20">
       <h1 className="text-2xl font-bold mb-4 text-center">Lịch sử bài thi</h1>
 
       <input
@@ -54,7 +71,6 @@ export default function ViewSv() {
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
       />
-
 
       <input
         type="date"
@@ -80,8 +96,8 @@ export default function ViewSv() {
               </tr>
             </thead>
             <tbody>
-              {filteredData.length > 0 ? (
-                filteredData.map((item) => (
+              {currentItems.length > 0 ? (
+                currentItems.map((item) => (
                   <tr
                     key={item.id_baithi}
                     className="hover:bg-gray-200 text-center cursor-pointer transition duration-200"
@@ -123,6 +139,25 @@ export default function ViewSv() {
           </table>
         </div>
       )}
+
+      {/* Pagination controls */}
+      <div className="flex justify-center mt-4">
+        <button
+          onClick={handlePreviousPage}
+          className="px-4 py-2 border rounded-l-md bg-blue-600 text-white"
+          disabled={currentPage === 1}
+        >
+          Prev
+        </button>
+        <span className="px-4 py-2 text-lg">{`Page ${currentPage} of ${totalPages}`}</span>
+        <button
+          onClick={handleNextPage}
+          className="px-4 py-2 border rounded-r-md bg-blue-600 text-white"
+          disabled={currentPage === totalPages}
+        >
+          Next
+        </button>
+      </div>
     </div>
   );
 }
