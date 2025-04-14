@@ -6,7 +6,13 @@ export default function ViewSv() {
   const { databaithi, loading } = useAppContext();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchDate, setSearchDate] = useState(""); // Thêm state cho ngày
 
+  // ✅ Lấy thông tin đăng nhập từ localStorage
+  const user = JSON.parse(localStorage.getItem("user"));
+  const tendangnhap = user?.tendangnhap || "";
+
+  // ✅ Hàm đánh giá theo điểm
   const getRating = (score) => {
     if (score >= 9) return "⭐⭐⭐⭐⭐";
     if (score >= 7) return "⭐⭐⭐⭐";
@@ -15,12 +21,27 @@ export default function ViewSv() {
     return "⭐";
   };
 
+  // ✅ Chuẩn hóa ngày về yyyy-mm-dd
+  const formatDate = (dateString) => {
+    const d = new Date(dateString);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  // ✅ Lọc dữ liệu theo tài khoản và điều kiện tìm kiếm
   const filteredData = databaithi.filter(
     (item) =>
-      item.id_baithi.toString().includes(searchTerm) ||
-      item.ngaylam.includes(searchTerm) ||
-      item.trangthai.toLowerCase().includes(searchTerm.toLowerCase())
+      item.hocsinh?.tendangnhap === tendangnhap &&
+      (
+        item.id_baithi.toString().includes(searchTerm) ||
+        item.trangthai.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.dethi?.tendethi.toLowerCase().includes(searchTerm.toLowerCase()) // ✅ Tìm theo tên đề thi
+      ) &&
+      (searchDate ? formatDate(item.ngaylam) === searchDate : true)
   );
+
 
   return (
     <div className="p-6 max-w-6xl mx-auto font-sans">
@@ -28,10 +49,18 @@ export default function ViewSv() {
 
       <input
         type="text"
-        placeholder="🔍 Tìm kiếm theo ID, ngày làm, trạng thái..."
-        className="w-full p-2 mb-4 border border-gray-300 rounded"
+        placeholder="🔍 Tìm theo ID, trạng thái hoặc tên đề thi..."
+        className="w-full p-2 mb-3 border border-gray-300 rounded"
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
+      />
+
+
+      <input
+        type="date"
+        className="w-full p-2 mb-4 border border-gray-300 rounded"
+        value={searchDate}
+        onChange={(e) => setSearchDate(e.target.value)}
       />
 
       {loading ? (
@@ -43,7 +72,7 @@ export default function ViewSv() {
               <tr className="bg-[#C7A36F] text-black">
                 <th className="border border-gray-300 px-4 py-3">ID</th>
                 <th className="border border-gray-300 px-4 py-3">ID Học Sinh</th>
-                <th className="border border-gray-300 px-4 py-3">ID Đề Thi</th>
+                <th className="border border-gray-300 px-4 py-3">Tên Đề Thi</th>
                 <th className="border border-gray-300 px-4 py-3">Ngày Làm</th>
                 <th className="border border-gray-300 px-4 py-3">Trạng Thái</th>
                 <th className="border border-gray-300 px-4 py-3">Điểm Thi</th>
@@ -64,8 +93,8 @@ export default function ViewSv() {
                   >
                     <td className="border border-gray-300 px-4 py-2">{item.id_baithi}</td>
                     <td className="border border-gray-300 px-4 py-2">{item.hocsinh?.id_hocsinh}</td>
-                    <td className="border border-gray-300 px-4 py-2">{item.dethi?.id_dethi}</td>
-                    <td className="border border-gray-300 px-4 py-2">{item.ngaylam}</td>
+                    <td className="border border-gray-300 px-4 py-2">{item.dethi?.tendethi}</td>
+                    <td className="border border-gray-300 px-4 py-2">{formatDate(item.ngaylam)}</td>
                     <td className="border border-gray-300 px-4 py-2">
                       <span
                         className={`px-3 py-1 rounded-full text-white text-xs 

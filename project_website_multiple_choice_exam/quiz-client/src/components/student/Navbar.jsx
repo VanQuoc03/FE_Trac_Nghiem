@@ -37,9 +37,9 @@ export default function Navbar({ onLogout }) {
           <Link to="/join-exam" className="hover:underline">
             THAM GIA THI
           </Link>
-          <Link to="/subjects" className="hover:underline">
+          {/* <Link to="/subjects" className="hover:underline">
             MÔN THI
-          </Link>
+          </Link> */}
           <Link to="/notifications" className="hover:underline">
             THÔNG BÁO
           </Link>
