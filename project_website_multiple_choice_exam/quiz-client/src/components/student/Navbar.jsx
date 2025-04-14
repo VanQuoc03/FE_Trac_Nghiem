@@ -25,7 +25,7 @@ export default function Navbar({ onLogout }) {
 
   return (
     <>
-      <header className="bg-[#C7A36F] shadow-md rounded-full mx-auto w-[90%] max-w-screen-xl mt-4 px-8 py-3 flex items-center justify-between">
+      <header className="bg-[#C7A36F] shadow-md rounded-full mx-auto w-[90%] max-w-screen-xl mt-4 px-8 py-3 flex items-center justify-between fixed top-0 left-1/2 transform -translate-x-1/2 z-50">
         <div className="text-lg font-bold">LOGO</div>
         <nav className="flex-1 flex justify-center space-x-6 text-sm font-medium">
           <Link to="/" className="hover:underline">
@@ -65,7 +65,7 @@ export default function Navbar({ onLogout }) {
                 Thông tin tài khoản
               </Link>
               <Link
-                to="/"
+                to="/history-exam"
                 className="block px-4 py-2 text-sm hover:bg-gray-100"
                 onClick={() => setDropdownOpen(false)}
               >

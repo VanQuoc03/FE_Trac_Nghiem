@@ -60,6 +60,7 @@ const HomePage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [user, setUser] = useState(null);
+  console.log(user)
   const [teacherId, setTeacherId] = useState(null);
 
   useEffect(() => {
