@@ -4,6 +4,11 @@ import NavbarStudent from "./components/student/Navbar"; // Student Navbar
 import NavbarTeacher from "./components/teacher/Navbar"; // Teacher Navbar
 import ViewSv from "./components/student/ViewSv";
 import Detail from "./components/student/Detail";
+import PracticePage from "./components/student/PracticePage";
+import PracticeTake from "./components/student/PracticeTake";
+import JoinExam from "./components/student/JoinExam";
+import JoinExamTake from "./components/student/JoinExamTake";
+import ProfilePage from "./components/student/ProfilePage"; // Import the new ProfilePage
 import HomePage from "./components/teacher/HomePage";
 import ExamDetail from "./components/teacher/exam/ExamDetail";
 import SubjectsPage from "./components/teacher/SubjectsPage";
@@ -18,6 +23,12 @@ import EditExam from "./components/teacher/exam/EditExam";
 import BaiThiTheoNgay from "./components/teacher/BaiThiTheoNgay";
 import Login from "./components/Login";
 import { AppContextProvider } from "./Context/AppContext";
+
+// Placeholder components for student features
+const SubjectsPageStudent = () => <div className="p-6">Trang Môn Thi (Chưa triển khai)</div>;
+const NotificationsPage = () => <div className="p-6">Trang Thông Báo (Chưa triển khai)</div>;
+const ContactPage = () => <div className="p-6">Trang Liên Hệ (Chưa triển khai)</div>;
+const SettingsPage = () => <div className="p-6">Trang Cài Đặt (Chưa triển khai)</div>;
 
 export default function App() {
   const [user, setUser] = useState(null); // { role: "student" | "teacher", token, id }
@@ -74,7 +85,16 @@ export default function App() {
             }
           >
             <Route index element={<ViewSv />} />
-            <Route path="/detail/:id" element={<Detail />} />
+            <Route path="detail/:id" element={<Detail />} />
+            <Route path="practice" element={<PracticePage />} />
+            <Route path="practice/take/:id_dethi" element={<PracticeTake />} />
+            <Route path="join-exam" element={<JoinExam />} />
+            <Route path="join-exam/take/:id_dethi" element={<JoinExamTake />} />
+            <Route path="subjects" element={<SubjectsPageStudent />} />
+            <Route path="notifications" element={<NotificationsPage />} />
+            <Route path="contact" element={<ContactPage />} />
+            <Route path="profile" element={<ProfilePage />} /> {/* Use the new ProfilePage */}
+            <Route path="settings" element={<SettingsPage />} />
           </Route>
 
           {/* Teacher Routes */}

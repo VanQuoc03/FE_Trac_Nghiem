@@ -12,7 +12,7 @@ const EditExam = () => {
   const [newQuestion, setNewQuestion] = useState({
     noidungcauhoi: "",
     dapan: "",
-    options: ["", "", "", ""], // Initialize with exactly 4 empty options
+    options: ["", "", "", ""],
   });
   const [id_monhoc, setIdMonhoc] = useState(null);
 
@@ -20,17 +20,28 @@ const EditExam = () => {
     const fetchExam = async () => {
       try {
         const res = await axios.get(`/api/dethi/${id_dethi}`);
+        console.log("Backend response:", res.data);
+
+        // Assume thoigianbatdau is in local timezone (YYYY-MM-DD HH:mm:ss)
+        let thoigianbatdau = "";
+        if (res.data.thoigianbatdau) {
+          const date = new Date(res.data.thoigianbatdau);
+          if (!isNaN(date.getTime())) {
+            // Format for datetime-local (YYYY-MM-DDTHH:mm)
+            const pad = (num) => String(num).padStart(2, "0");
+            thoigianbatdau = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+          }
+        }
+
         setForm({
           thoigianthi: res.data.thoigianthi,
           trangthai: res.data.trangthai,
-          thoigianbatdau: res.data.thoigianbatdau
-            ? new Date(res.data.thoigianbatdau).toISOString().slice(0, 16)
-            : "",
+          thoigianbatdau,
         });
         setQuestions(res.data.questions || []);
-        setIdMonhoc(res.data.id_monhoc); // Store id_monhoc from exam
+        setIdMonhoc(res.data.id_monhoc);
       } catch (error) {
-        console.log("Lỗi khi tải đề thi", error);
+        console.log("Lỗi khi tải đề thi:", error);
         setError("Không thể tải đề thi");
       } finally {
         setLoading(false);
@@ -58,7 +69,6 @@ const EditExam = () => {
   const handleUpdateQuestion = async (questionIndex) => {
     const question = questions[questionIndex];
     try {
-      // Validate that dapan is one of the options (client-side)
       if (!question.options.includes(question.dapan)) {
         setError("Đáp án đúng phải nằm trong các lựa chọn!");
         return;
@@ -69,7 +79,7 @@ const EditExam = () => {
         dapan: question.dapan,
         options: question.options,
       });
-      setError(""); // Clear error on success
+      setError("");
       alert("Cập nhật câu hỏi thành công!");
     } catch (error) {
       console.log("Lỗi khi cập nhật câu hỏi:", error);
@@ -106,7 +116,6 @@ const EditExam = () => {
   const handleAddQuestion = async (e) => {
     e.preventDefault();
     try {
-      // Validate inputs
       if (
         !newQuestion.noidungcauhoi ||
         !newQuestion.dapan ||
@@ -116,19 +125,16 @@ const EditExam = () => {
         return;
       }
 
-      // Validate exactly 4 options
       if (newQuestion.options.length !== 4) {
         setError("Câu hỏi phải có đúng 4 lựa chọn");
         return;
       }
 
-      // Validate dapan is one of the options
       if (!newQuestion.options.includes(newQuestion.dapan)) {
         setError("Đáp án đúng phải nằm trong các lựa chọn!");
         return;
       }
 
-      // Send request to add question
       const res = await axios.post(`/api/questions`, {
         examId: id_dethi,
         questions: [
@@ -141,7 +147,6 @@ const EditExam = () => {
         ],
       });
 
-      // Add new question(s) to state
       setQuestions([...questions, ...res.data.questions]);
       setNewQuestion({
         noidungcauhoi: "",
@@ -161,10 +166,25 @@ const EditExam = () => {
     setError("");
     try {
       const { thoigianthi, trangthai, thoigianbatdau } = form;
+      console.log("Form thoigianbatdau:", thoigianbatdau);
+
+      // Parse thoigianbatdau as local time
+      const localStartTime = new Date(thoigianbatdau);
+      if (isNaN(localStartTime.getTime())) {
+        setError("Thời gian bắt đầu không hợp lệ!");
+        return;
+      }
+
+      // Format as YYYY-MM-DD HH:mm:ss (local time)
+      const pad = (num) => String(num).padStart(2, "0");
+      const formattedStartTime = `${localStartTime.getFullYear()}-${pad(localStartTime.getMonth() + 1)}-${pad(localStartTime.getDate())} ${pad(localStartTime.getHours())}:${pad(localStartTime.getMinutes())}:${pad(localStartTime.getSeconds())}`;
+
+      console.log("Sending formattedStartTime:", formattedStartTime);
+
       await axios.put(`/api/dethi/${id_dethi}`, {
         thoigianthi: parseInt(thoigianthi),
         trangthai,
-        thoigianbatdau,
+        thoigianbatdau: formattedStartTime,
       });
       alert("Cập nhật đề thi thành công!");
       navigate("/teacher/exams");

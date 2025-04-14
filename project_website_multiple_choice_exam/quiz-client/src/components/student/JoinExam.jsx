@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom";
 const JoinExam = () => {
   const navigate = useNavigate();
   const [exams, setExams] = useState([]);
-  const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -22,6 +21,8 @@ const JoinExam = () => {
           headers: { Authorization: `Bearer ${user.token}` },
         });
 
+        console.log("Backend exams response:", response.data);
+
         const realExams = response.data.filter((exam) => exam.trangthai === "dethi");
         setExams(realExams);
       } catch (err) {
@@ -36,21 +37,40 @@ const JoinExam = () => {
   }, [navigate]);
 
   const handleJoin = (exam) => {
+    setError(""); // Reset lỗi
+
+    // Thời gian hiện tại (múi giờ cục bộ)
     const now = new Date();
+    console.log("Current time (local):", now.toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" }));
+
+    // Parse thời gian từ backend (giả sử là YYYY-MM-DD HH:mm:ss cục bộ)
     const start = new Date(exam.thoigianbatdau);
     const end = new Date(exam.thoigianketthuc);
 
-    if (now < start || now > end) {
-      setError(`Đề thi ${exam.tendethi} đã hết hạn hoặc chưa bắt đầu.`);
+    console.log("Exam data:", exam);
+    console.log("Exam start time:", exam.thoigianbatdau, start.toLocaleString("vi-VN"));
+    console.log("Exam end time:", exam.thoigianketthuc, end.toLocaleString("vi-VN"));
+
+    // Kiểm tra tính hợp lệ của thời gian
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      setError(`Thời gian của đề thi ${exam.tendethi} không hợp lệ.`);
+      console.log("Invalid date detected:", { start, end });
       return;
     }
 
-    // In a real app, the code should be validated against a field in the dethi table
-    if (code !== "exam123") { // Example code; replace with actual validation
-      setError("Mã đề thi không đúng.");
+    // So sánh thời gian
+    if (now < start) {
+      setError(`Đề thi ${exam.tendethi} chưa bắt đầu. Bắt đầu lúc ${start.toLocaleString("vi-VN")}.`);
+      console.log("Exam not started:", { now, start });
+      return;
+    }
+    if (now > end) {
+      setError(`Đề thi ${exam.tendethi} đã hết hạn. Kết thúc lúc ${end.toLocaleString("vi-VN")}.`);
+      console.log("Exam ended:", { now, end });
       return;
     }
 
+    console.log(`Joining exam ${exam.id_dethi}`);
     navigate(`/join-exam/take/${exam.id_dethi}`);
   };
 
@@ -60,15 +80,6 @@ const JoinExam = () => {
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <h1 className="text-2xl font-bold mb-4 text-center">Tham Gia Thi</h1>
-      <div className="mb-4">
-        <input
-          type="text"
-          placeholder="Nhập mã đề thi"
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-          className="border p-2 rounded w-full max-w-xs"
-        />
-      </div>
       {exams.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {exams.map((exam) => (
@@ -79,11 +90,15 @@ const JoinExam = () => {
               </p>
               <p>
                 <strong>Thời gian bắt đầu:</strong>{" "}
-                {new Date(exam.thoigianbatdau).toLocaleString("vi-VN")}
+                {new Date(exam.thoigianbatdau).toLocaleString("vi-VN", {
+                  timeZone: "Asia/Ho_Chi_Minh",
+                })}
               </p>
               <p>
                 <strong>Thời gian kết thúc:</strong>{" "}
-                {new Date(exam.thoigianketthuc).toLocaleString("vi-VN")}
+                {new Date(exam.thoigianketthuc).toLocaleString("vi-VN", {
+                  timeZone: "Asia/Ho_Chi_Minh",
+                })}
               </p>
               <p>
                 <strong>Thời gian làm bài:</strong> {exam.thoigianthi} phút

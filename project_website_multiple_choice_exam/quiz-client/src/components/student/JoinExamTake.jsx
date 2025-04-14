@@ -18,14 +18,19 @@ const JoinExamTake = () => {
     const fetchExamAndQuestions = async () => {
       try {
         const user = JSON.parse(localStorage.getItem("user"));
+        console.log("User data:", user);
         if (!user || user.role !== "student") {
+          console.log("Invalid user or role, redirecting to login");
           navigate("/login");
           return;
         }
 
-        const examResponse = await axios.get(`/api/dethi/${id_dethi}`, {
+        console.log("Fetching exam for id_dethi:", id_dethi);
+        const examResponse = await axios.get(`/api/dethi/dethi/${id_dethi}`, {
           headers: { Authorization: `Bearer ${user.token}` },
         });
+        console.log("Exam response:", examResponse.data);
+
         const examData = examResponse.data;
         if (examData.trangthai !== "dethi") {
           setError("Đây không phải đề thi thật.");
@@ -33,25 +38,49 @@ const JoinExamTake = () => {
           return;
         }
 
+        // Thời gian hiện tại và thời gian đề thi (múi giờ cục bộ)
         const now = new Date();
         const start = new Date(examData.thoigianbatdau);
         const end = new Date(examData.thoigianketthuc);
-        if (now < start || now > end) {
-          setError("Đề thi đã hết hạn hoặc chưa bắt đầu.");
+
+        console.log("Current time:", now.toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" }));
+        console.log("Exam start:", examData.thoigianbatdau, start.toLocaleString("vi-VN"));
+        console.log("Exam end:", examData.thoigianketthuc, end.toLocaleString("vi-VN"));
+
+        // Kiểm tra thời gian hợp lệ
+        if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+          setError("Thời gian đề thi không hợp lệ.");
+          setLoading(false);
+          return;
+        }
+
+        if (now < start) {
+          setError(`Đề thi chưa bắt đầu. Bắt đầu lúc ${start.toLocaleString("vi-VN")}.`);
+          setLoading(false);
+          return;
+        }
+        if (now > end) {
+          setError(`Đề thi đã hết hạn. Kết thúc lúc ${end.toLocaleString("vi-VN")}.`);
           setLoading(false);
           return;
         }
 
         setExam(examData);
         setTimeLeft(examData.thoigianthi * 60);
-
-        const questionsResponse = await axios.get(`/api/dethi/${id_dethi}/questions`, {
-          headers: { Authorization: `Bearer ${user.token}` },
-        });
-        setQuestions(questionsResponse.data);
+        setQuestions(examData.questions || []); // Route mới trả questions trực tiếp
       } catch (err) {
         console.error("Error fetching exam:", err);
-        setError("Không thể tải bài thi.");
+        if (err.response?.status === 404) {
+          setError(`Không tìm thấy đề thi với mã ${id_dethi}. Vui lòng kiểm tra lại mã đề thi hoặc liên hệ giáo viên.`);
+        } else if (err.response?.status === 401) {
+          setError("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.");
+          navigate("/login");
+        } else {
+          setError(
+            err.response?.data?.message ||
+              `Không thể tải bài thi. Lỗi: ${err.message}`
+          );
+        }
       } finally {
         setLoading(false);
       }
@@ -120,7 +149,7 @@ const JoinExamTake = () => {
         {
           id_hocsinh: user.id,
           id_dethi: id_dethi,
-          ngaylam: new Date().toISOString(),
+          ngaylam: new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" }),
           trangthai: "hoanthanh",
           diemthi: 0,
         },
@@ -152,7 +181,7 @@ const JoinExamTake = () => {
         }
       });
 
-      const calculatedScore = (correctCount / totalQuestions) * 10;
+      const calculatedScore = totalQuestions > 0 ? (correctCount / totalQuestions) * 10 : 0;
       setScore(calculatedScore);
 
       await axios.post(
@@ -160,7 +189,7 @@ const JoinExamTake = () => {
         {
           id_hocsinh: user.id,
           id_dethi: id_dethi,
-          ngaylam: new Date().toISOString(),
+          ngaylam: new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" }),
           trangthai: "hoanthanh",
           diemthi: calculatedScore,
         },
@@ -201,10 +230,16 @@ const JoinExamTake = () => {
       <div className="flex justify-between mb-4">
         <div>
           <p>
-            <strong>Họ và tên:</strong> {JSON.parse(localStorage.getItem("user")).id}
+            <strong>Họ và tên:</strong> {JSON.parse(localStorage.getItem("user"))?.id || "N/A"}
           </p>
           <p>
-            <strong>Bài thi:</strong> {exam.tendethi}
+            <strong>Bài thi:</strong> {exam?.tendethi || "N/A"}
+          </p>
+          <p>
+            <strong>Môn học:</strong> {exam?.tenmonhoc || "N/A"}
+          </p>
+          <p>
+            <strong>Giáo viên:</strong> {exam?.ten_giaovien || "N/A"}
           </p>
         </div>
         <div className="text-right">
@@ -230,26 +265,34 @@ const JoinExamTake = () => {
         </div>
       ) : (
         <>
-          {questions.map((question, index) => (
-            <div key={question.id_cauhoi} className="mb-6">
-              <p className="font-semibold">
-                Câu hỏi {index + 1}: {question.noidungcauhoi}
-              </p>
-              {["A", "B", "C", "D"].map((option) => (
-                <label key={option} className="block mt-2 flex items-center">
-                  <input
-                    type="radio"
-                    name={`question-${question.id_cauhoi}`}
-                    value={option}
-                    onChange={() => handleAnswerChange(question.id_cauhoi, option)}
-                    className="mr-2"
-                  />
-                  <span className="mr-2">{option}</span>
-                  {question[`dapan_${option.toLowerCase()}`] || "N/A"}
-                </label>
-              ))}
-            </div>
-          ))}
+          {questions.length > 0 ? (
+            questions.map((question, index) => (
+              <div key={question.id_cauhoi} className="mb-6">
+                <p className="font-semibold">
+                  Câu hỏi {index + 1}: {question.noidungcauhoi}
+                </p>
+                {question.options && question.options.length > 0 ? (
+                  question.options.map((option, idx) => (
+                    <label key={idx} className="block mt-2 flex items-center">
+                      <input
+                        type="radio"
+                        name={`question-${question.id_cauhoi}`}
+                        value={String.fromCharCode(65 + idx)} // A, B, C, D
+                        onChange={() => handleAnswerChange(question.id_cauhoi, String.fromCharCode(65 + idx))}
+                        className="mr-2"
+                      />
+                      <span className="mr-2">{String.fromCharCode(65 + idx)}</span>
+                      {option}
+                    </label>
+                  ))
+                ) : (
+                  <p className="text-red-500">Không có đáp án cho câu hỏi này.</p>
+                )}
+              </div>
+            ))
+          ) : (
+            <p className="text-center">Không có câu hỏi nào cho đề thi này.</p>
+          )}
           <div className="flex justify-between">
             <button
               className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"

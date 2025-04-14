@@ -46,19 +46,34 @@ const CreateExam = () => {
     e.preventDefault();
     setLoading(true);
     setError("");
-  
+
     const user = JSON.parse(localStorage.getItem("user"));
     const id_dethi = `DT${Date.now()}`;
     const ngay_tao = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
-    const thoigianbatdau = new Date(startTime)
-      .toISOString()
-      .slice(0, 19)
-      .replace("T", " ");
-    const thoigianketthuc = new Date(new Date(startTime).getTime() + duration * 60000)
-      .toISOString()
-      .slice(0, 19)
-      .replace("T", " ");
-  
+
+    // Log input startTime
+    console.log("Input startTime:", startTime);
+
+    // Parse startTime as local time
+    const localStartTime = new Date(startTime);
+    if (isNaN(localStartTime.getTime())) {
+      setError("Thời gian bắt đầu không hợp lệ!");
+      setLoading(false);
+      return;
+    }
+
+    // Format as YYYY-MM-DD HH:mm:ss (local time)
+    const pad = (num) => String(num).padStart(2, "0");
+    const thoigianbatdau = `${localStartTime.getFullYear()}-${pad(localStartTime.getMonth() + 1)}-${pad(localStartTime.getDate())} ${pad(localStartTime.getHours())}:${pad(localStartTime.getMinutes())}:${pad(localStartTime.getSeconds())}`;
+
+    // Calculate end time
+    const localEndTime = new Date(localStartTime.getTime() + duration * 60000);
+    const thoigianketthuc = `${localEndTime.getFullYear()}-${pad(localEndTime.getMonth() + 1)}-${pad(localEndTime.getDate())} ${pad(localEndTime.getHours())}:${pad(localEndTime.getMinutes())}:${pad(localEndTime.getSeconds())}`;
+
+    // Log formatted times
+    console.log("thoigianbatdau:", thoigianbatdau);
+    console.log("thoigianketthuc:", thoigianketthuc);
+
     const examData = {
       id_dethi,
       id_giaovien: user.id,
@@ -70,20 +85,17 @@ const CreateExam = () => {
       thoigianketthuc,
       ngay_tao,
     };
-  
+
     try {
+      console.log("Sending examData:", examData);
       const response = await axios.post("/api/exams", examData, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${user.token}`,
         },
       });
-  
+
       alert("Tạo bài thi thành công!");
-      console.log("Navigating to /teacher/form-question with state:", {
-        numQuestions,
-        examData: { ...examData, id_dethi: response.data.id_dethi },
-      });
       navigate("/teacher/form-question", {
         state: { numQuestions, examData: { ...examData, id_dethi: response.data.id_dethi } },
       });
