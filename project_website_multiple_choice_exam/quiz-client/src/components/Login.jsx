@@ -29,9 +29,8 @@ export default function Login({ onLogin }) {
           role,
           token,
           id: role === "student" ? response.data.id_hocsinh : response.data.id_giaovien,
-          tendangnhap: username, // Lưu tên đăng nhập
+          tendangnhap: username,
         };
-        // Lưu userData vào localStorage
         localStorage.setItem("user", JSON.stringify(userData));
         onLogin(userData);
       } else {
@@ -45,54 +44,70 @@ export default function Login({ onLogin }) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-6 text-center">Đăng Nhập</h2>
-        {error && <p className="text-red-500 mb-4 text-center">{error}</p>}
+    <div className="min-h-screen bg-[#FFF0E5] flex items-center justify-center">
+      <div className="bg-[#DBBA84] rounded-xl shadow-2xl px-10 py-8 w-full max-w-md">
+        <h2 className="text-white text-2xl font-bold mb-4 text-center border-b border-white pb-2">
+          ĐĂNG NHẬP
+        </h2>
+        {error && (
+          <p className="text-red-600 bg-white px-3 py-2 rounded mb-3 text-sm text-center">
+            {error}
+          </p>
+        )}
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-2">Vai trò</label>
+            <label className="text-white font-semibold text-sm block mb-1">
+              Vai trò:
+            </label>
             <select
               value={role}
               onChange={(e) => setRole(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded"
+              className="w-full px-3 py-2 rounded focus:outline-none"
             >
-              <option value="student">Học Sinh</option>
-              <option value="teacher">Giáo Viên</option>
+              <option value="student">Học sinh</option>
+              <option value="teacher">Giáo viên</option>
             </select>
           </div>
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-2">Tên đăng nhập</label>
+            <label className="text-white font-semibold text-sm block mb-1">
+              Tên đăng nhập:
+            </label>
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded"
-              placeholder="Nhập tên đăng nhập"
+              className="w-full px-4 py-2 rounded-full bg-white focus:outline-none"
               required
             />
           </div>
           <div className="mb-6">
-            <label className="block text-sm font-medium mb-2">Mật khẩu</label>
+            <label className="text-white font-semibold text-sm block mb-1">
+              Mật khẩu:
+            </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded"
-              placeholder="Nhập mật khẩu"
+              className="w-full px-4 py-2 rounded-full bg-white focus:outline-none"
               required
             />
           </div>
           <button
             type="submit"
             disabled={loading}
-            className={`w-full p-2 rounded text-white ${
-              loading ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"
+            className={`w-full py-2 rounded-full text-[#333] bg-[#D8AD73] font-bold transition ${
+              loading ? "opacity-60" : "hover:bg-[#936222]"
             }`}
           >
-            {loading ? "Đang đăng nhập..." : "Đăng Nhập"}
+            {loading ? "Đang đăng nhập..." : "ĐĂNG NHẬP"}
           </button>
         </form>
+        <p className="text-black text-sm mt-4 text-center">
+          Chưa có tài khoản?{" "}
+          <a href="/signup" className="font-semibold underline">
+            Đăng ký ngay
+          </a>
+        </p>
       </div>
     </div>
   );
