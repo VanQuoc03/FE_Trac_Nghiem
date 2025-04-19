@@ -2,11 +2,13 @@ import { useState } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 
-export default function Login({ onLogin }) {
+export default function RegisterStudent({ onRegister }) {
   const navigate = useNavigate();
-  const [role, setRole] = useState("student");
+  const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -16,27 +18,21 @@ export default function Login({ onLogin }) {
     setLoading(true);
 
     try {
-      const endpoint =
-        role === "student" ? "/api/hocsinh/login" : "/api/giaovien/login";
-      const payload =
-        role === "student"
-          ? { tendangnhap: username, matkhau: password }
-          : { tendangnhap_gv: username, matkhau_gv: password };
+      const payload = {
+        ten_hocsinh: name,
+        tendangnhap: username,
+        matkhau: password,
+        email,
+        phone,
+      };
 
-      const response = await axios.post(endpoint, payload);
-      const { token, message } = response.data;
+      const response = await axios.post("/api/hocsinh/register", payload);
+      const { message } = response.data;
 
       if (message.includes("thành công")) {
-        const userData = {
-          role,
-          token,
-          id: role === "student" ? response.data.id_hocsinh : response.data.id_giaovien,
-          tendangnhap: username,
-        };
-        localStorage.setItem("user", JSON.stringify(userData));
-        onLogin(userData);
+        onRegister?.();
       } else {
-        setError("Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.");
+        setError("Đăng ký thất bại. Vui lòng kiểm tra lại thông tin.");
       }
     } catch (err) {
       setError(err.response?.data?.message || "Lỗi server. Vui lòng thử lại.");
@@ -78,29 +74,28 @@ export default function Login({ onLogin }) {
           </button>
         </div>
       </header>
-      <div className="min-h-screen bg-[#FFF0E5] flex items-center justify-center">
+      <div className="min-h-screen bg-[#FFF0E5] flex items-center justify-center pt-20">
         <div className="bg-[#DBBA84] rounded-xl shadow-2xl px-10 py-8 w-full max-w-md">
           <h2 className="text-white text-2xl font-bold mb-4 text-center border-b border-white pb-2">
-            ĐĂNG NHẬP
+            ĐĂNG KÝ HỌC SINH
           </h2>
           {error && (
             <p className="text-red-600 bg-white px-3 py-2 rounded mb-3 text-sm text-center">
               {error}
             </p>
           )}
-          <form onSubmit={handleSubmit}>
+          <div>
             <div className="mb-4">
               <label className="text-white font-semibold text-sm block mb-1">
-                Vai trò:
+                Họ và tên:
               </label>
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                className="w-full px-3 py-2 rounded focus:outline-none"
-              >
-                <option value="student">Học sinh</option>
-                <option value="teacher">Giáo viên</option>
-              </select>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full px-4 py-2 rounded-full bg-white focus:outline-none"
+                required
+              />
             </div>
             <div className="mb-4">
               <label className="text-white font-semibold text-sm block mb-1">
@@ -114,7 +109,7 @@ export default function Login({ onLogin }) {
                 required
               />
             </div>
-            <div className="mb-6">
+            <div className="mb-4">
               <label className="text-white font-semibold text-sm block mb-1">
                 Mật khẩu:
               </label>
@@ -126,20 +121,44 @@ export default function Login({ onLogin }) {
                 required
               />
             </div>
+            <div className="mb-4">
+              <label className="text-white font-semibold text-sm block mb-1">
+                Email:
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-2 rounded-full bg-white focus:outline-none"
+                required
+              />
+            </div>
+            <div className="mb-4">
+              <label className="text-white font-semibold text-sm block mb-1">
+                Số điện thoại:
+              </label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="w-full px-4 py-2 rounded-full bg-white focus:outline-none"
+                required
+              />
+            </div>
             <button
-              type="submit"
+              onClick={handleSubmit}
               disabled={loading}
               className={`w-full py-2 rounded-full text-[#333] bg-[#D8AD73] font-bold transition ${
                 loading ? "opacity-60" : "hover:bg-[#936222]"
               }`}
             >
-              {loading ? "Đang đăng nhập..." : "ĐĂNG NHẬP"}
+              {loading ? "Đang đăng ký..." : "ĐĂNG KÝ"}
             </button>
-          </form>
+          </div>
           <p className="text-black text-sm mt-4 text-center">
-            Chưa có tài khoản?{" "}
-            <a href="/RoleSelection" className="font-semibold underline">
-              Đăng ký ngay
+            Đã có tài khoản?{" "}
+            <a href="/Login" className="font-semibold underline">
+              Đăng nhập ngay
             </a>
           </p>
         </div>

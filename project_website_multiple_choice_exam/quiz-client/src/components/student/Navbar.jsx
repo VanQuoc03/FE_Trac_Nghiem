@@ -13,14 +13,14 @@ export default function Navbar({ onLogout }) {
   // Kiểm tra trạng thái đăng nhập
   useEffect(() => {
     if (!user || user.role !== "student") {
-      navigate("/login");
+      navigate("/HomenotLogin");
     }
   }, [navigate, user]);
 
   const handleLogout = () => {
-    localStorage.clear(); // Xóa toàn bộ localStorage
+    localStorage.clear();
     onLogout();
-    navigate("/login");
+    navigate("/HomenotLogin");
   };
 
   return (

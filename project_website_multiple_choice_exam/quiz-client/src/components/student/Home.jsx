@@ -11,7 +11,6 @@ const Home = () => {
 
   return (
     <div className="font-sans bg-gray-100 min-h-screen pt-[100px]">
-      {/* Hero Banner Section */}
       <div className="relative w-full h-[500px]">
         <img
           src={banner}

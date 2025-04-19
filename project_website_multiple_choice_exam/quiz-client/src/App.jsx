@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import NavbarStudent from "./components/student/Navbar"; // Student Navbar
-import NavbarTeacher from "./components/teacher/Navbar"; // Teacher Navbar
+import NavbarStudent from "./components/student/Navbar";
+import NavbarTeacher from "./components/teacher/Navbar";
 import ViewSv from "./components/student/ViewSv";
 import Detail from "./components/student/Detail";
 import PracticePage from "./components/student/PracticePage";
@@ -22,11 +22,18 @@ import TeacherExamList from "./components/teacher/exams/TeacherExamList";
 import EditExam from "./components/teacher/exam/EditExam";
 import BaiThiTheoNgay from "./components/teacher/BaiThiTheoNgay";
 import Login from "./components/Login";
+import RoleSelection from "./components/RoleSelection";
+import RegisterTeacher from './components/RegisterTeacher';
+import RegisterStudent from './components/RegisterStudent';
+import HomenotLogin from './components/HomenotLogin';
 import { AppContextProvider } from "./Context/AppContext";
 import ThongBao from "./components/student/ThongBao";
 import Home from "./components/student/Home";
+import LoginAdmin from './admin/loginAdmin';
+import HomeAdmin from './admin/homeAdmin';
 
-// Placeholder components for student features
+
+// Placeholder student pages
 const SubjectsPageStudent = () => <div className="p-6">Trang Môn Thi (Chưa triển khai)</div>;
 const NotificationsPage = () => <div className="p-6">Trang Thông Báo (Chưa triển khai)</div>;
 const ContactPage = () => <div className="p-6">Trang Liên Hệ (Chưa triển khai)</div>;
@@ -36,7 +43,6 @@ export default function App() {
   const [user, setUser] = useState(null); // { role: "student" | "teacher", token, id, tendangnhap }
 
   useEffect(() => {
-    // Check local storage for existing user session
     const storedUser = JSON.parse(localStorage.getItem("user"));
     if (storedUser) {
       setUser(storedUser);
@@ -50,13 +56,12 @@ export default function App() {
 
   const handleLogout = () => {
     setUser(null);
-    localStorage.clear(); // Xóa toàn bộ localStorage
+    localStorage.clear();
   };
 
-  // Redirect to login if not authenticated
   const ProtectedRoute = ({ children, allowedRole }) => {
     if (!user || user.role !== allowedRole) {
-      return <Navigate to="/login" />;
+      return <Navigate to="/HomenotLogin" />;
     }
     return children;
   };
@@ -65,7 +70,8 @@ export default function App() {
     <AppContextProvider>
       <Router>
         <Routes>
-          {/* Login Route */}
+          {/* Auth Routes */}
+          <Route path="/HomenotLogin" element={<HomenotLogin />} />
           <Route
             path="/login"
             element={
@@ -76,7 +82,9 @@ export default function App() {
               )
             }
           />
-
+          <Route path="/roleselection" element={<RoleSelection />} />
+          <Route path="/RegisterStudent" element={<RegisterStudent />} />
+          <Route path="/RegisterTeacher" element={<RegisterTeacher />} />
           {/* Student Routes */}
           <Route
             path="/"
@@ -123,8 +131,11 @@ export default function App() {
             <Route path="exams/by-date" element={<BaiThiTheoNgay />} />
           </Route>
 
-          {/* Fallback Route */}
+          {/* Fallback */}
           <Route path="*" element={<Navigate to="/login" />} />
+          {/* ADMIN */}
+          <Route path="/LoginAdmin" element={<LoginAdmin/>}/>
+          <Route path="/HomeAdmin" element={<HomeAdmin/>}/>
         </Routes>
       </Router>
     </AppContextProvider>
