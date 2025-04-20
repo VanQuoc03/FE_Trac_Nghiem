@@ -24,10 +24,7 @@ const CreateExam = () => {
     const fetchSubjects = async () => {
       try {
         const response = await axios.get("/api/monhoc", {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${user.token}`,
-          },
+          headers: { Authorization: `Bearer ${user.token}` },
         });
         setSubjects(response.data);
         if (response.data.length > 0) {
@@ -35,9 +32,7 @@ const CreateExam = () => {
         }
       } catch (error) {
         console.error("Lỗi khi lấy danh sách môn học:", error);
-        setError(
-          error.response?.data?.message || "Không thể tải danh sách môn học"
-        );
+        setError(error.response?.data?.message || "Không thể tải danh sách môn học");
       }
     };
 
@@ -48,37 +43,35 @@ const CreateExam = () => {
     e.preventDefault();
     setLoading(true);
     setError("");
-  
+
     const user = JSON.parse(localStorage.getItem("user"));
     const now = new Date();
     const pad2 = (n) => String(n).padStart(2, "0");
     const ngay_tao = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(
       now.getDate()
-    )} ${pad2(now.getHours())}:${pad2(now.getMinutes())}:${pad2(
-      now.getSeconds()
-    )}`;
-  
+    )} ${pad2(now.getHours())}:${pad2(now.getMinutes())}:${pad2(now.getSeconds())}`;
+
     const localStartTime = new Date(startTime);
     if (isNaN(localStartTime.getTime())) {
       setError("Thời gian bắt đầu không hợp lệ!");
       setLoading(false);
       return;
     }
-  
+
     const pad = (num) => String(num).padStart(2, "0");
     const thoigianbatdau = `${localStartTime.getFullYear()}-${pad(
       localStartTime.getMonth() + 1
     )}-${pad(localStartTime.getDate())} ${pad(localStartTime.getHours())}:${pad(
       localStartTime.getMinutes()
     )}:${pad(localStartTime.getSeconds())}`;
-  
+
     const localEndTime = new Date(localStartTime.getTime() + duration * 60000);
     const thoigianketthuc = `${localEndTime.getFullYear()}-${pad(
       localEndTime.getMonth() + 1
     )}-${pad(localEndTime.getDate())} ${pad(localEndTime.getHours())}:${pad(
       localEndTime.getMinutes()
     )}:${pad(localEndTime.getSeconds())}`;
-  
+
     const examData = {
       id_giaovien: user.id,
       id_monhoc: subject,
@@ -88,8 +81,10 @@ const CreateExam = () => {
       thoigianbatdau,
       thoigianketthuc,
       ngay_tao,
+      is_restricted: 0, // Default to unrestricted
+      allowed_students: [],
     };
-  
+
     try {
       console.log("Sending examData:", examData);
       const response = await axios.post("/api/exams", examData, {
@@ -98,7 +93,7 @@ const CreateExam = () => {
           Authorization: `Bearer ${user.token}`,
         },
       });
-  
+
       alert("Tạo bài thi thành công!");
       navigate("/teacher/form-question", {
         state: {

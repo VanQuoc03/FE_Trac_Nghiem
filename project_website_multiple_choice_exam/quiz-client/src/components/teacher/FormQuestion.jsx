@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { MdUpload } from "react-icons/md";
+import axios from "axios";
 
 const FormQuestion = () => {
   const location = useLocation();
@@ -56,7 +57,6 @@ const FormQuestion = () => {
   };
 
   const handleSaveQuestions = async () => {
-    // Validate questions before sending
     for (const q of questions) {
       if (!q.text || !q.correctAnswer || !q.options.every((opt) => opt)) {
         console.log("Validation failed: Incomplete question", q);
@@ -72,7 +72,7 @@ const FormQuestion = () => {
         return;
       }
     }
-  
+
     const payload = {
       examId: examData.id_dethi,
       questions: questions.map((q) => ({
@@ -82,9 +82,9 @@ const FormQuestion = () => {
         id_monhoc: examData.id_monhoc,
       })),
     };
-  
+
     console.log("Sending payload to /api/questions:", payload);
-  
+
     try {
       const response = await fetch("/api/questions", {
         method: "POST",
@@ -94,10 +94,10 @@ const FormQuestion = () => {
         },
         body: JSON.stringify(payload),
       });
-  
+
       const responseData = await response.json();
       console.log("Response from /api/questions:", responseData);
-  
+
       if (response.ok) {
         setIsConfirmModalOpen(true);
       } else {
@@ -109,7 +109,6 @@ const FormQuestion = () => {
       alert(`Lỗi khi lưu câu hỏi: ${error.message}`);
     }
   };
-  
 
   const handleFileUpload = async (event, fileType) => {
     const file = event.target.files[0];
@@ -147,6 +146,32 @@ const FormQuestion = () => {
     } catch (error) {
       console.error("Lỗi khi upload file:", error);
       alert("Lỗi khi upload file!");
+    }
+  };
+
+  const handleCreateStudentList = async () => {
+    try {
+      // Set is_restricted = 1 for the exam
+      await axios.post(
+        `/api/dethi/${examData.id_dethi}/students`,
+        {
+          is_restricted: 1,
+          allowed_students: [],
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${user.token}`,
+          },
+        }
+      );
+
+      navigate("/teacher/create-student-list", {
+        state: { examData: { ...examData, is_restricted: 1 } },
+      });
+    } catch (error) {
+      console.error("Lỗi khi cập nhật trạng thái đề thi:", error);
+      alert(error.response?.data?.message || "Lỗi khi chuyển sang trang tạo danh sách học sinh!");
     }
   };
 
@@ -354,13 +379,16 @@ const FormQuestion = () => {
             <div className="flex justify-end mb-3">
               <button
                 className="bg-gray-600 w-[15%] mr-2 rounded-md text-white"
-                onClick={() => setIsConfirmModalOpen(false)}
+                onClick={() => {
+                  setIsConfirmModalOpen(false);
+                  navigate("/teacher"); // Navigate to teacher dashboard
+                }}
               >
                 Không
               </button>
               <button
                 className="bg-blue-500 w-[10%] mr-3 rounded-md h-[40px] text-white"
-                onClick={() => navigate("/teacher/create-student-list")}
+                onClick={handleCreateStudentList}
               >
                 Có
               </button>
