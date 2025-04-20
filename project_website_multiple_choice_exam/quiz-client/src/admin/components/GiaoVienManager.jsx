@@ -1,266 +1,286 @@
-import React, { useState, useEffect } from "react";
+import { useEffect, useState } from 'react';
+import axios from 'axios';
+import Sidebar from '../Sidebar';
 
-const GiaoVienManager = ({ apiUrl }) => {
-  const [giaovienList, setGiaovienList] = useState([]);
-  const [newGiaovien, setNewGiaovien] = useState({
-    id_giaovien: "",
-    ten_giaovien: "",
-    tendangnhap_gv: "",
-    matkhau_gv: "",
-    email_gv: "",
-    phone_gv: "",
-    monchinh: "",
-    lopdaychinh: "",
+export default function GiaoVienManager({ setToken }) {
+  const [giaoVienList, setGiaoVienList] = useState([]);
+  const [monHocList, setMonHocList] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [formData, setFormData] = useState({
+    ten_giaovien: '',
+    tendangnhap_gv: '',
+    matkhau_gv: '',
+    email_gv: '',
+    phone_gv: '',
+    monchinh: '',
+    lopdaychinh: '',
   });
-  const [editingGiaovien, setEditingGiaovien] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingId, setEditingId] = useState(null);
 
-  // Lấy danh sách giáo viên
-  const fetchGiaovien = async () => {
+  const token = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).token : '';
+
+  // Fetch danh sách giáo viên
+  const fetchGiaoVien = async () => {
+    setLoading(true);
     try {
-      const response = await fetch(`${apiUrl}/giaovien`);
-      const data = await response.json();
-      setGiaovienList(data);
-    } catch (error) {
-      console.error("Error fetching giaovien:", error);
+      const res = await axios.get('/api/giaovien', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setGiaoVienList(res.data);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Lỗi tải danh sách giáo viên');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch danh sách môn học
+  const fetchMonHoc = async () => {
+    try {
+      const res = await axios.get('/api/monhoc', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setMonHocList(res.data);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Lỗi tải danh sách môn học');
     }
   };
 
   useEffect(() => {
-    fetchGiaovien();
+    fetchGiaoVien();
+    fetchMonHoc();
   }, []);
 
-  // Thêm giáo viên
-  const handleAdd = async (e) => {
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     try {
-      const response = await fetch(`${apiUrl}/giaovien`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newGiaovien),
-      });
-      if (response.ok) {
-        fetchGiaovien();
-        setNewGiaovien({
-          id_giaovien: "",
-          ten_giaovien: "",
-          tendangnhap_gv: "",
-          matkhau_gv: "",
-          email_gv: "",
-          phone_gv: "",
-          monchinh: "",
-          lopdaychinh: "",
+      if (isEditing) {
+        // Update giáo viên
+        const updateData = { ...formData };
+        delete updateData.matkhau_gv; // Không gửi mật khẩu khi cập nhật
+        await axios.put(`/api/giaovien/${editingId}`, updateData, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } else {
+        // Thêm giáo viên mới
+        await axios.post('/api/giaovien/register', formData, {
+          headers: { Authorization: `Bearer ${token}` },
         });
       }
-    } catch (error) {
-      console.error("Error adding giaovien:", error);
+      setFormData({
+        ten_giaovien: '',
+        tendangnhap_gv: '',
+        matkhau_gv: '',
+        email_gv: '',
+        phone_gv: '',
+        monchinh: '',
+        lopdaychinh: '',
+      });
+      setIsEditing(false);
+      setEditingId(null);
+      fetchGiaoVien();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Lỗi khi gửi dữ liệu');
     }
   };
 
-  // Sửa giáo viên
-  const handleEdit = (gv) => {
-    setEditingGiaovien(gv);
-    setNewGiaovien(gv);
+  const handleEdit = (giaoVien) => {
+    setFormData({
+      ten_giaovien: giaoVien.ten_giaovien,
+      tendangnhap_gv: giaoVien.tendangnhap_gv,
+      matkhau_gv: '', // Không load mật khẩu
+      email_gv: giaoVien.email_gv,
+      phone_gv: giaoVien.phone_gv,
+      monchinh: giaoVien.monhoc.id_monhoc,
+      lopdaychinh: giaoVien.lopdaychinh,
+    });
+    setIsEditing(true);
+    setEditingId(giaoVien.id_giaovien);
   };
 
-  const handleUpdate = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await fetch(`${apiUrl}/giaovien/${editingGiaovien.id_giaovien}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newGiaovien),
-      });
-      if (response.ok) {
-        fetchGiaovien();
-        setEditingGiaovien(null);
-        setNewGiaovien({
-          id_giaovien: "",
-          ten_giaovien: "",
-          tendangnhap_gv: "",
-          matkhau_gv: "",
-          email_gv: "",
-          phone_gv: "",
-          monchinh: "",
-          lopdaychinh: "",
-        });
-      }
-    } catch (error) {
-      console.error("Error updating giaovien:", error);
-    }
-  };
-
-  // Xóa giáo viên
   const handleDelete = async (id) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa giáo viên này không?')) return;
+    setError('');
     try {
-      const response = await fetch(`${apiUrl}/giaovien/${id}`, {
-        method: "DELETE",
+      await axios.delete(`/api/giaovien/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-      if (response.ok) {
-        fetchGiaovien();
+      fetchGiaoVien();
+    } catch (err) {
+      const msg = err.response?.data?.error || 'Lỗi khi xóa giáo viên';
+      if (
+        msg.includes('foreign key constraint fails') ||
+        msg.toLowerCase().includes('a foreign key constraint')
+      ) {
+        setError('Không thể xóa giáo viên này vì đang được liên kết với đề thi.');
+      } else {
+        setError(msg);
       }
-    } catch (error) {
-      console.error("Error deleting giaovien:", error);
     }
   };
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold mb-4">Danh Sách Giáo Viên</h1>
-      <div className="bg-white p-4 rounded shadow mb-4">
-        <h2 className="text-xl font-semibold mb-2">
-          {editingGiaovien ? "Sửa Giáo Viên" : "Thêm Giáo Viên"}
-        </h2>
-        <form onSubmit={editingGiaovien ? handleUpdate : handleAdd}>
+    <div className="flex">
+      <Sidebar setToken={setToken} />
+      <div className="ml-64 p-6 flex-1 bg-[#FFF0E5] min-h-screen">
+        <h2 className="text-2xl font-bold mb-6 text-[#333]">Quản lý giáo viên</h2>
+
+        {/* Hiển thị lỗi nếu có */}
+        {error && (
+          <p className="text-red-600 bg-white px-3 py-2 rounded mb-6 text-sm text-center">{error}</p>
+        )}
+
+        {/* FORM THÊM/SỬA */}
+        <form onSubmit={handleSubmit} className="bg-white p-6 mb-8 rounded shadow-md">
+          <h3 className="text-lg font-semibold mb-4 text-[#333]">{isEditing ? 'Sửa' : 'Thêm'} giáo viên</h3>
           <div className="grid grid-cols-2 gap-4">
             <input
-              type="text"
-              placeholder="ID Giáo Viên"
-              value={newGiaovien.id_giaovien}
-              onChange={(e) =>
-                setNewGiaovien({ ...newGiaovien, id_giaovien: e.target.value })
-              }
+              name="ten_giaovien"
+              value={formData.ten_giaovien}
+              onChange={handleChange}
+              placeholder="Tên giáo viên"
               className="border p-2 rounded"
-              disabled={editingGiaovien !== null}
+              required
             />
             <input
-              type="text"
-              placeholder="Tên Giáo Viên"
-              value={newGiaovien.ten_giaovien}
-              onChange={(e) =>
-                setNewGiaovien({ ...newGiaovien, ten_giaovien: e.target.value })
-              }
+              name="tendangnhap_gv"
+              value={formData.tendangnhap_gv}
+              onChange={handleChange}
+              placeholder="Tên đăng nhập"
               className="border p-2 rounded"
+              required
+              disabled={isEditing} // Không cho sửa tên đăng nhập khi cập nhật
             />
             <input
-              type="text"
-              placeholder="Tên Đăng Nhập"
-              value={newGiaovien.tendangnhap_gv}
-              onChange={(e) =>
-                setNewGiaovien({
-                  ...newGiaovien,
-                  tendangnhap_gv: e.target.value,
-                })
-              }
-              className="border p-2 rounded"
-            />
-            <input
+              name="matkhau_gv"
               type="password"
-              placeholder="Mật Khẩu"
-              value={newGiaovien.matkhau_gv}
-              onChange={(e) =>
-                setNewGiaovien({ ...newGiaovien, matkhau_gv: e.target.value })
-              }
+              value={formData.matkhau_gv}
+              onChange={handleChange}
+              placeholder="Mật khẩu"
               className="border p-2 rounded"
+              required={!isEditing} // Bắt buộc khi thêm mới
             />
             <input
-              type="email"
+              name="email_gv"
+              value={formData.email_gv}
+              onChange={handleChange}
               placeholder="Email"
-              value={newGiaovien.email_gv}
-              onChange={(e) =>
-                setNewGiaovien({ ...newGiaovien, email_gv: e.target.value })
-              }
+              type="email"
               className="border p-2 rounded"
+              required
             />
             <input
-              type="text"
-              placeholder="Số Điện Thoại"
-              value={newGiaovien.phone_gv}
-              onChange={(e) =>
-                setNewGiaovien({ ...newGiaovien, phone_gv: e.target.value })
-              }
+              name="phone_gv"
+              value={formData.phone_gv}
+              onChange={handleChange}
+              placeholder="Số điện thoại"
               className="border p-2 rounded"
             />
-            <input
-              type="text"
-              placeholder="Môn Chính"
-              value={newGiaovien.monchinh}
-              onChange={(e) =>
-                setNewGiaovien({ ...newGiaovien, monchinh: e.target.value })
-              }
+            <select
+              name="monchinh"
+              value={formData.monchinh}
+              onChange={handleChange}
               className="border p-2 rounded"
-            />
+              required
+            >
+              <option value="">Chọn môn chính</option>
+              {monHocList.map((mon) => (
+                <option key={mon.id_monhoc} value={mon.id_monhoc}>
+                  {mon.tenmonhoc}
+                </option>
+              ))}
+            </select>
             <input
-              type="text"
-              placeholder="Lớp Dạy Chính"
-              value={newGiaovien.lopdaychinh}
-              onChange={(e) =>
-                setNewGiaovien({ ...newGiaovien, lopdaychinh: e.target.value })
-              }
+              name="lopdaychinh"
+              value={formData.lopdaychinh}
+              onChange={handleChange}
+              placeholder="Lớp dạy chính"
               className="border p-2 rounded"
             />
           </div>
-          <button
-            type="submit"
-            className="mt-4 bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
-          >
-            {editingGiaovien ? "Cập Nhật" : "Thêm"}
+          <button type="submit" className="mt-4 bg-[#C7A36F] text-white px-4 py-2 rounded">
+            {isEditing ? 'Cập nhật' : 'Thêm mới'}
           </button>
-          {editingGiaovien && (
+          {isEditing && (
             <button
               type="button"
               onClick={() => {
-                setEditingGiaovien(null);
-                setNewGiaovien({
-                  id_giaovien: "",
-                  ten_giaovien: "",
-                  tendangnhap_gv: "",
-                  matkhau_gv: "",
-                  email_gv: "",
-                  phone_gv: "",
-                  monchinh: "",
-                  lopdaychinh: "",
+                setFormData({
+                  ten_giaovien: '',
+                  tendangnhap_gv: '',
+                  matkhau_gv: '',
+                  email_gv: '',
+                  phone_gv: '',
+                  monchinh: '',
+                  lopdaychinh: '',
                 });
+                setIsEditing(false);
+                setEditingId(null);
               }}
-              className="mt-4 ml-2 bg-gray-500 text-white p-2 rounded hover:bg-gray-600"
+              className="mt-4 ml-2 bg-gray-500 text-white px-4 py-2 rounded"
             >
               Hủy
             </button>
           )}
         </form>
+
+        {/* DANH SÁCH GIÁO VIÊN */}
+        {loading ? (
+          <p className="text-center">Đang tải dữ liệu...</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse bg-white shadow-md rounded-lg">
+              <thead>
+                <tr className="bg-[#C7A36F] text-white">
+                  <th className="border p-3">ID</th>
+                  <th className="border p-3">Tên</th>
+                  <th className="border p-3">Tên đăng nhập</th>
+                  <th className="border p-3">Email</th>
+                  <th className="border p-3">SĐT</th>
+                  <th className="border p-3">Môn</th>
+                  <th className="border p-3">Lớp chính</th>
+                  <th className="border p-3">Hành động</th>
+                </tr>
+              </thead>
+              <tbody>
+                {giaoVienList.map((giaoVien) => (
+                  <tr key={giaoVien.id_giaovien} className="hover:bg-gray-100">
+                    <td className="border p-3">{giaoVien.id_giaovien}</td>
+                    <td className="border p-3">{giaoVien.ten_giaovien}</td>
+                    <td className="border p-3">{giaoVien.tendangnhap_gv}</td>
+                    <td className="border p-3">{giaoVien.email_gv}</td>
+                    <td className="border p-3">{giaoVien.phone_gv}</td>
+                    <td className="border p-3">{giaoVien.monhoc?.tenmonhoc}</td>
+                    <td className="border p-3">{giaoVien.lopdaychinh}</td>
+                    <td className="border p-3 space-x-2">
+                      <button
+                        onClick={() => handleEdit(giaoVien)}
+                        className="bg-yellow-400 px-2 py-1 rounded text-white text-sm"
+                      >
+                        Sửa
+                      </button>
+                      <button
+                        onClick={() => handleDelete(giaoVien.id_giaovien)}
+                        className="bg-red-500 px-2 py-1 rounded text-white text-sm"
+                      >
+                        Xóa
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
-      <table className="w-full bg-white rounded shadow">
-        <thead>
-          <tr className="bg-gray-200">
-            <th className="p-2">ID</th>
-            <th className="p-2">Tên</th>
-            <th className="p-2">Tên Đăng Nhập</th>
-            <th className="p-2">Email</th>
-            <th className="p-2">Số Điện Thoại</th>
-            <th className="p-2">Môn Chính</th>
-            <th className="p-2">Lớp Dạy Chính</th>
-            <th className="p-2">Hành Động</th>
-          </tr>
-        </thead>
-        <tbody>
-          {giaovienList.map((gv) => (
-            <tr key={gv.id_giaovien} className="border-t">
-              <td className="p-2">{gv.id_giaovien}</td>
-              <td className="p-2">{gv.ten_giaovien}</td>
-              <td className="p-2">{gv.tendangnhap_gv}</td>
-              <td className="p-2">{gv.email_gv}</td>
-              <td className="p-2">{gv.phone_gv}</td>
-              <td className="p-2">{gv.monchinh}</td>
-              <td className="p-2">{gv.lopdaychinh}</td>
-              <td className="p-2">
-                <button
-                  onClick={() => handleEdit(gv)}
-                  className="bg-yellow-500 text-white p-1 rounded hover:bg-yellow-600 mr-2"
-                >
-                  Sửa
-                </button>
-                <button
-                  onClick={() => handleDelete(gv.id_giaovien)}
-                  className="bg-red-500 text-white p-1 rounded hover:bg-red-600"
-                >
-                  Xóa
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
     </div>
   );
-};
-
-export default GiaoVienManager;
+}

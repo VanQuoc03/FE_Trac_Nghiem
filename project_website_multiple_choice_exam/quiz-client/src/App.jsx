@@ -31,7 +31,11 @@ import ThongBao from "./components/student/ThongBao";
 import Home from "./components/student/Home";
 import LoginAdmin from './admin/loginAdmin';
 import HomeAdmin from './admin/homeAdmin';
-
+import GiaoVienManager from './admin/components/GiaoVienManager'
+import HocSinhManager from './admin/components/HocSinhManager'
+import DeThiManager from './admin/components/DeThiManager'
+import BaiThiManager from './admin/components/BaiThiManager'
+import MonHocManager from './admin/components/MonHocManager'
 
 // Placeholder student pages
 const SubjectsPageStudent = () => <div className="p-6">Trang Môn Thi (Chưa triển khai)</div>;
@@ -134,8 +138,13 @@ export default function App() {
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/login" />} />
           {/* ADMIN */}
-          <Route path="/LoginAdmin" element={<LoginAdmin/>}/>
-          <Route path="/HomeAdmin" element={<HomeAdmin/>}/>
+          <Route path="/LoginAdmin" element={<LoginAdmin />} />
+          <Route path="/HomeAdmin" element={<HomeAdmin />} />
+          <Route path="/GiaoVienManager" element={<GiaoVienManager />} />
+          <Route path="/HocSinhManager" element={<HocSinhManager />} />
+          <Route path="/DeThiManager" element={<DeThiManager />} />
+          <Route path="/BaiThiManager" element={<BaiThiManager />} />
+          <Route path="/MonHocManager" element={<MonHocManager />} />
         </Routes>
       </Router>
     </AppContextProvider>

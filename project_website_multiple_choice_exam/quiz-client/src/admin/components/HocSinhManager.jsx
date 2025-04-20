@@ -1,232 +1,231 @@
-import React, { useState, useEffect } from "react";
+import { useEffect, useState } from 'react';
+import axios from 'axios';
+import Sidebar from '../Sidebar';
 
-const HocSinhManager = ({ apiUrl }) => {
-  const [hocsinhList, setHocsinhList] = useState([]);
-  const [newHocsinh, setNewHocsinh] = useState({
-    id_hocsinh: "",
-    ten_hocsinh: "",
-    tendangnhap: "",
-    matkhau: "",
-    email: "",
-    phone: "",
+export default function HocSinhManager({ setToken }) {
+  const [hocSinhList, setHocSinhList] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [formData, setFormData] = useState({
+    ten_hocsinh: '',
+    tendangnhap: '',
+    matkhau: '',
+    email: '',
+    phone: '',
   });
-  const [editingHocsinh, setEditingHocsinh] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingId, setEditingId] = useState(null);
 
-  const fetchHocsinh = async () => {
+  const token = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).token : '';
+
+  // Fetch danh sách học sinh
+  const fetchHocSinh = async () => {
+    setLoading(true);
     try {
-      const response = await fetch(`${apiUrl}/hocsinh`);
-      const data = await response.json();
-      setHocsinhList(data);
-    } catch (error) {
-      console.error("Error fetching hocsinh:", error);
+      const res = await axios.get('/api/hocsinh', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setHocSinhList(res.data);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Lỗi tải danh sách học sinh');
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchHocsinh();
+    fetchHocSinh();
   }, []);
 
-  // Thêm học sinh
-  const handleAdd = async (e) => {
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     try {
-      const response = await fetch(`${apiUrl}/hocsinh`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newHocsinh),
-      });
-      if (response.ok) {
-        fetchHocsinh();
-        setNewHocsinh({
-          id_hocsinh: "",
-          ten_hocsinh: "",
-          tendangnhap: "",
-          matkhau: "",
-          email: "",
-          phone: "",
+      if (isEditing) {
+        // Update học sinh
+        const updateData = { ...formData };
+        delete updateData.matkhau; // Không gửi mật khẩu khi cập nhật
+        await axios.put(`/api/hocsinh/${editingId}`, updateData, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } else {
+        // Thêm học sinh mới
+        await axios.post('/api/hocsinh/register', formData, {
+          headers: { Authorization: `Bearer ${token}` },
         });
       }
-    } catch (error) {
-      console.error("Error adding hocsinh:", error);
+      setFormData({
+        ten_hocsinh: '',
+        tendangnhap: '',
+        matkhau: '',
+        email: '',
+        phone: '',
+      });
+      setIsEditing(false);
+      setEditingId(null);
+      fetchHocSinh();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Lỗi khi gửi dữ liệu');
     }
   };
 
-  // Sửa học sinh
-  const handleEdit = (hs) => {
-    setEditingHocsinh(hs);
-    setNewHocsinh(hs);
+  const handleEdit = (hocSinh) => {
+    setFormData({
+      ten_hocsinh: hocSinh.ten_hocsinh,
+      tendangnhap: hocSinh.tendangnhap,
+      matkhau: '', // Không load mật khẩu
+      email: hocSinh.email,
+      phone: hocSinh.phone,
+    });
+    setIsEditing(true);
+    setEditingId(hocSinh.id_hocsinh);
   };
 
-  const handleUpdate = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await fetch(`${apiUrl}/hocsinh/${editingHocsinh.id_hocsinh}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newHocsinh),
-      });
-      if (response.ok) {
-        fetchHocsinh();
-        setEditingHocsinh(null);
-        setNewHocsinh({
-          id_hocsinh: "",
-          ten_hocsinh: "",
-          tendangnhap: "",
-          matkhau: "",
-          email: "",
-          phone: "",
-        });
-      }
-    } catch (error) {
-      console.error("Error updating hocsinh:", error);
-    }
-  };
-
-  // Xóa học sinh
   const handleDelete = async (id) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa học sinh này? Tất cả bài thi liên quan sẽ bị xóa.')) return;
+    setError('');
     try {
-      const response = await fetch(`${apiUrl}/hocsinh/${id}`, {
-        method: "DELETE",
+      await axios.delete(`/api/hocsinh/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-      if (response.ok) {
-        fetchHocsinh();
-      }
-    } catch (error) {
-      console.error("Error deleting hocsinh:", error);
+      fetchHocSinh();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Không thể xóa học sinh. Vui lòng kiểm tra các bài thi liên quan.');
     }
   };
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold mb-4">Danh Sách Học Sinh</h1>
-      <div className="bg-white p-4 rounded shadow mb-4">
-        <h2 className="text-xl font-semibold mb-2">
-          {editingHocsinh ? "Sửa Học Sinh" : "Thêm Học Sinh"}
-        </h2>
-        <form onSubmit={editingHocsinh ? handleUpdate : handleAdd}>
+    <div className="flex">
+      <Sidebar setToken={setToken} />
+      <div className="ml-64 p-6 flex-1 bg-[#FFF0E5] min-h-screen">
+        <h2 className="text-2xl font-bold mb-6 text-[#333]">Quản lý học sinh</h2>
+
+        {/* Hiển thị lỗi nếu có */}
+        {error && (
+          <p className="text-red-600 bg-white px-3 py-2 rounded mb-6 text-sm text-center">{error}</p>
+        )}
+
+        {/* FORM THÊM/SỬA */}
+        <form onSubmit={handleSubmit} className="bg-white p-6 mb-8 rounded shadow-md">
+          <h3 className="text-lg font-semibold mb-4 text-[#333]">{isEditing ? 'Sửa' : 'Thêm'} học sinh</h3>
           <div className="grid grid-cols-2 gap-4">
             <input
-              type="text"
-              placeholder="ID Học Sinh"
-              value={newHocsinh.id_hocsinh}
-              onChange={(e) =>
-                setNewHocsinh({ ...newHocsinh, id_hocsinh: e.target.value })
-              }
+              name="ten_hocsinh"
+              value={formData.ten_hocsinh}
+              onChange={handleChange}
+              placeholder="Tên học sinh"
               className="border p-2 rounded"
-              disabled={editingHocsinh !== null}
+              required
             />
             <input
-              type="text"
-              placeholder="Tên Học Sinh"
-              value={newHocsinh.ten_hocsinh}
-              onChange={(e) =>
-                setNewHocsinh({ ...newHocsinh, ten_hocsinh: e.target.value })
-              }
+              name="tendangnhap"
+              value={formData.tendangnhap}
+              onChange={handleChange}
+              placeholder="Tên đăng nhập"
               className="border p-2 rounded"
+              required
+              disabled={isEditing} // Không cho sửa tên đăng nhập khi cập nhật
             />
             <input
-              type="text"
-              placeholder="Tên Đăng Nhập"
-              value={newHocsinh.tendangnhap}
-              onChange={(e) =>
-                setNewHocsinh({ ...newHocsinh, tendangnhap: e.target.value })
-              }
-              className="border p-2 rounded"
-            />
-            <input
+              name="matkhau"
               type="password"
-              placeholder="Mật Khẩu"
-              value={newHocsinh.matkhau}
-              onChange={(e) =>
-                setNewHocsinh({ ...newHocsinh, matkhau: e.target.value })
-              }
+              value={formData.matkhau}
+              onChange={handleChange}
+              placeholder="Mật khẩu"
               className="border p-2 rounded"
+              required={!isEditing} // Bắt buộc khi thêm mới
             />
             <input
-              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
               placeholder="Email"
-              value={newHocsinh.email}
-              onChange={(e) =>
-                setNewHocsinh({ ...newHocsinh, email: e.target.value })
-              }
+              type="email"
               className="border p-2 rounded"
+              required
             />
             <input
-              type="text"
-              placeholder="Số Điện Thoại"
-              value={newHocsinh.phone}
-              onChange={(e) =>
-                setNewHocsinh({ ...newHocsinh, phone: e.target.value })
-              }
+              name="phone"
+              value={formData.phone}
+              onChange={handleChange}
+              placeholder="Số điện thoại"
               className="border p-2 rounded"
             />
           </div>
-          <button
-            type="submit"
-            className="mt-4 bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
-          >
-            {editingHocsinh ? "Cập Nhật" : "Thêm"}
+          <button type="submit" className="mt-4 bg-[#C7A36F] text-white px-4 py-2 rounded">
+            {isEditing ? 'Cập nhật' : 'Thêm mới'}
           </button>
-          {editingHocsinh && (
+          {isEditing && (
             <button
               type="button"
               onClick={() => {
-                setEditingHocsinh(null);
-                setNewHocsinh({
-                  id_hocsinh: "",
-                  ten_hocsinh: "",
-                  tendangnhap: "",
-                  matkhau: "",
-                  email: "",
-                  phone: "",
+                setFormData({
+                  ten_hocsinh: '',
+                  tendangnhap: '',
+                  matkhau: '',
+                  email: '',
+                  phone: '',
                 });
+                setIsEditing(false);
+                setEditingId(null);
               }}
-              className="mt-4 ml-2 bg-gray-500 text-white p-2 rounded hover:bg-gray-600"
+              className="mt-4 ml-2 bg-gray-500 text-white px-4 py-2 rounded"
             >
               Hủy
             </button>
           )}
         </form>
+
+        {/* DANH SÁCH HỌC SINH */}
+        {loading ? (
+          <p className="text-center">Đang tải dữ liệu...</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse bg-white shadow-md rounded-lg">
+              <thead>
+                <tr className="bg-[#C7A36F] text-white">
+                  <th className="border p-3">ID</th>
+                  <th className="border p-3">Tên</th>
+                  <th className="border p-3">Tên đăng nhập</th>
+                  <th className="border p-3">Email</th>
+                  <th className="border p-3">SĐT</th>
+                  <th className="border p-3">Hành động</th>
+                </tr>
+              </thead>
+              <tbody>
+                {hocSinhList.map((hs) => (
+                  <tr key={hs.id_hocsinh} className="hover:bg-gray-100">
+                    <td className="border p-3">{hs.id_hocsinh}</td>
+                    <td className="border p-3">{hs.ten_hocsinh}</td>
+                    <td className="border p-3">{hs.tendangnhap}</td>
+                    <td className="border p-3">{hs.email}</td>
+                    <td className="border p-3">{hs.phone}</td>
+                    <td className="border p-3 space-x-2">
+                      <button
+                        onClick={() => handleEdit(hs)}
+                        className="bg-yellow-400 px-2 py-1 rounded text-white text-sm"
+                      >
+                        Sửa
+                      </button>
+                      <button
+                        onClick={() => handleDelete(hs.id_hocsinh)}
+                        className="bg-red-500 px-2 py-1 rounded text-white text-sm"
+                      >
+                        Xóa
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
-      <table className="w-full bg-white rounded shadow">
-        <thead>
-          <tr className="bg-gray-200">
-            <th className="p-2">ID</th>
-            <th className="p-2">Tên</th>
-            <th className="p-2">Tên Đăng Nhập</th>
-            <th className="p-2">Email</th>
-            <th className="p-2">Số Điện Thoại</th>
-            <th className="p-2">Hành Động</th>
-          </tr>
-        </thead>
-        <tbody>
-          {hocsinhList.map((hs) => (
-            <tr key={hs.id_hocsinh} className="border-t">
-              <td className="p-2">{hs.id_hocsinh}</td>
-              <td className="p-2">{hs.ten_hocsinh}</td>
-              <td className="p-2">{hs.tendangnhap}</td>
-              <td className="p-2">{hs.email}</td>
-              <td className="p-2">{hs.phone}</td>
-              <td className="p-2">
-                <button
-                  onClick={() => handleEdit(hs)}
-                  className="bg-yellow-500 text-white p-1 rounded hover:bg-yellow-600 mr-2"
-                >
-                  Sửa
-                </button>
-                <button
-                  onClick={() => handleDelete(hs.id_hocsinh)}
-                  className="bg-red-500 text-white p-1 rounded hover:bg-red-600"
-                >
-                  Xóa
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
     </div>
   );
-};
-
-export default HocSinhManager;
+}

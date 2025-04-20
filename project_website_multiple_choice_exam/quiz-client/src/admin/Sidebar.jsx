@@ -5,9 +5,9 @@ export default function Sidebar({ setToken }) {
   const location = useLocation()
 
   const handleLogout = () => {
-    localStorage.removeItem('user')
-    setToken('')
-    navigate('/login')
+    localStorage.removeItem('user');
+    navigate('/LoginAdmin'); 
+    setToken('');         
   }
 
   const isActive = (path) => location.pathname === path ? 'bg-[#C7A36F] text-white' : 'text-white hover:bg-gray-600'
@@ -17,28 +17,40 @@ export default function Sidebar({ setToken }) {
       <h1 className="text-2xl font-bold mb-6 text-[#C7A36F]">Admin Dashboard</h1>
       <nav className="space-y-2">
         <Link
-          to="/"
+          to="/HomeAdmin"
           className={`block py-2 px-4 rounded ${isActive('/')}`}
         >
           Tổng quan
         </Link>
         <Link
-          to="/hocsinh"
+          to="/HocSinhManager"
           className={`block py-2 px-4 rounded ${isActive('/hocsinh')}`}
         >
           Quản lý học sinh
         </Link>
         <Link
-          to="/giaovien"
+          to="/GiaoVienManager"
           className={`block py-2 px-4 rounded ${isActive('/giaovien')}`}
         >
           Quản lý giáo viên
         </Link>
         <Link
-          to="/dethi"
+          to="/MonHocManager"
+          className={`block py-2 px-4 rounded ${isActive('/dethi')}`}
+        >
+          Quản lý môn học
+        </Link>
+        <Link
+          to="/DeThiManager"
           className={`block py-2 px-4 rounded ${isActive('/dethi')}`}
         >
           Quản lý đề thi
+        </Link>
+        <Link
+          to="/BaiThiManager"
+          className={`block py-2 px-4 rounded ${isActive('/dethi')}`}
+        >
+          Quản lý bài thi
         </Link>
         <button
           onClick={handleLogout}
