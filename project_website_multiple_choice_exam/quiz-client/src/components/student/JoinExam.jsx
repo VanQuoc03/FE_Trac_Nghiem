@@ -8,6 +8,18 @@ const JoinExam = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
+  // Hàm định dạng thời gian UTC
+  const formatUTCTime = (utcDateString) => {
+    const utcDate = new Date(utcDateString);
+    const pad = (num) => String(num).padStart(2, "0");
+    return `${pad(utcDate.getUTCHours())}:${pad(utcDate.getUTCMinutes())}:${pad(utcDate.getUTCSeconds())} ${pad(utcDate.getUTCDate())}/${pad(utcDate.getUTCMonth() + 1)}/${utcDate.getUTCFullYear()}`;
+  };
+
+
+  const convertToAsiaHoChiMinh = (utcDate) => {
+    return new Date(utcDate.getTime() + 7 * 60 * 60 * 1000); // Cộng 7 giờ
+  };
+
   useEffect(() => {
     const fetchExams = async () => {
       try {
@@ -27,11 +39,7 @@ const JoinExam = () => {
         });
 
         console.log("Backend exams response:", JSON.stringify(response.data, null, 2));
-        const validExams = response.data.filter(exam => {
-          const end = new Date(exam.thoigianketthuc);
-          return end > new Date();
-        });
-        setExams(validExams);
+        setExams(response.data);
       } catch (err) {
         console.error("Error fetching exams:", err);
         setError(err.response?.data?.message || "Không thể tải danh sách đề thi.");
@@ -44,17 +52,23 @@ const JoinExam = () => {
   }, [navigate]);
 
   const getExamStatus = (exam) => {
-    const now = new Date();
+    const now = new Date(); 
     const start = new Date(exam.thoigianbatdau);
-    const end = new Date(exam.thoigianketthuc);
+    const end = new Date(exam.thoigianketthuc); 
 
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    // Chuyển đổi sang múi giờ Asia/Ho_Chi_Minh để so sánh
+    const nowLocal = convertToAsiaHoChiMinh(now);
+    const startLocal = start;
+    const endLocal = end;
+
+
+    if (isNaN(startLocal.getTime()) || isNaN(endLocal.getTime())) {
       return { status: "invalid", text: "Thời gian không hợp lệ", disabled: true };
     }
-    if (now < start) {
+    if (nowLocal < startLocal) {
       return { status: "not-started", text: "Chưa xảy ra", disabled: true };
     }
-    if (now > end) {
+    if (nowLocal > endLocal) {
       return { status: "ended", text: "Đã hết hạn", disabled: true };
     }
     return { status: "ongoing", text: "Đang diễn ra", disabled: false };
@@ -64,29 +78,33 @@ const JoinExam = () => {
     setError("");
 
     const now = new Date();
-    console.log("Current time (local):", now.toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" }));
+    const start = new Date(exam.thoigianbatdau); // Thời gian từ API là UTC
+    const end = new Date(exam.thoigianketthuc); // Thời gian từ API là UTC
 
-    const start = new Date(exam.thoigianbatdau);
-    const end = new Date(exam.thoigianketthuc);
+    // Chuyển đổi sang múi giờ Asia/Ho_Chi_Minh để so sánh
+    const nowLocal = convertToAsiaHoChiMinh(now);
+    const startLocal = convertToAsiaHoChiMinh(start);
+    const endLocal = convertToAsiaHoChiMinh(end);
 
+    console.log("Current time (Asia/Ho_Chi_Minh):", nowLocal.toLocaleString("vi-VN"));
     console.log("Exam data:", JSON.stringify(exam, null, 2));
-    console.log("Exam start time:", exam.thoigianbatdau, start.toLocaleString("vi-VN"));
-    console.log("Exam end time:", exam.thoigianketthuc, end.toLocaleString("vi-VN"));
+    console.log("Exam start time (Asia/Ho_Chi_Minh):", startLocal.toLocaleString("vi-VN"));
+    console.log("Exam end time (Asia/Ho_Chi_Minh):", endLocal.toLocaleString("vi-VN"));
 
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    if (isNaN(startLocal.getTime()) || isNaN(endLocal.getTime())) {
       setError(`Thời gian của đề thi ${exam.tendethi} không hợp lệ.`);
-      console.log("Invalid date detected:", { start, end });
+      console.log("Invalid date detected:", { startLocal, endLocal });
       return;
     }
 
-    if (now < start) {
-      setError(`Đề thi ${exam.tendethi} chưa bắt đầu. Bắt đầu lúc ${start.toLocaleString("vi-VN")}.`);
-      console.log("Exam not started:", { now, start });
+    if (nowLocal < startLocal) {
+      setError(`Đề thi ${exam.tendethi} chưa bắt đầu. Bắt đầu lúc ${formatUTCTime(exam.thoigianbatdau)}.`);
+      console.log("Exam not started:", { nowLocal, startLocal });
       return;
     }
-    if (now > end) {
-      setError(`Đề thi ${exam.tendethi} đã hết hạn. Kết thúc lúc ${end.toLocaleString("vi-VN")}.`);
-      console.log("Exam ended:", { now, end });
+    if (nowLocal > endLocal) {
+      setError(`Đề thi ${exam.tendethi} đã hết hạn. Kết thúc lúc ${formatUTCTime(exam.thoigianketthuc)}.`);
+      console.log("Exam ended:", { nowLocal, endLocal });
       return;
     }
 
@@ -124,7 +142,8 @@ const JoinExam = () => {
               <div key={exam.id_dethi} className="bg-white p-4 rounded-lg shadow-md">
                 <h2 className="text-lg font-semibold">{exam.tendethi || "Không có tiêu đề"}</h2>
                 <p>
-                  <strong>Môn:</strong> {exam.monhoc?.tenmonhoc || exam.monhoc?.id_monhoc || "Không xác định"}
+                  <strong>Môn:</strong>{" "}
+                  {exam.monhoc?.tenmonhoc || exam.monhoc?.id_monhoc || "Không xác định"}
                 </p>
                 <p>
                   <strong>Giáo viên:</strong> {exam.giaovien?.ten_giaovien || "Không xác định"}
@@ -144,25 +163,19 @@ const JoinExam = () => {
                   </span>
                 </p>
                 <p>
-                  <strong>Thời gian bắt đầu:</strong>{" "}
-                  {new Date(exam.thoigianbatdau).toLocaleString("vi-VN", {
-                    timeZone: "Asia/Ho_Chi_Minh",
-                  })}
+                  <strong>Thời gian bắt đầu (UTC):</strong>{" "}
+                  {formatUTCTime(exam.thoigianbatdau)}
                 </p>
                 <p>
-                  <strong>Thời gian kết thúc:</strong>{" "}
-                  {new Date(exam.thoigianketthuc).toLocaleString("vi-VN", {
-                    timeZone: "Asia/Ho_Chi_Minh",
-                  })}
+                  <strong>Thời gian kết thúc (UTC):</strong>{" "}
+                  {formatUTCTime(exam.thoigianketthuc)}
                 </p>
                 <p>
                   <strong>Thời gian làm bài:</strong> {exam.thoigianthi} phút
                 </p>
                 <button
                   className={`mt-2 px-4 py-2 rounded text-white ${
-                    disabled
-                      ? "bg-gray-400 cursor-not-allowed"
-                      : "bg-blue-600 hover:bg-blue-700"
+                    disabled ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
                   }`}
                   onClick={() => handleJoin(exam)}
                   disabled={disabled}
