@@ -19,7 +19,7 @@ export default function RegisterTeacher({ onRegister }) {
   useEffect(() => {
     const fetchSubjects = async () => {
       try {
-        const response = await axios.get("http://localhost:3000/api/monhoc");
+        const response = await axios.get("https://quiz-api-34vp.onrender.com/api/monhoc");
         setSubjects(response.data);
       } catch (e) {
         setError("Không thể tải danh sách môn học.");
