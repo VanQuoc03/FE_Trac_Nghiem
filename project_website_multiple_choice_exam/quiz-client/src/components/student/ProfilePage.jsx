@@ -43,7 +43,7 @@ const ProfilePage = () => {
         }
 
         // Gọi API để lấy thông tin học sinh
-        const response = await axios.get(`https://quiz-api-34vp.onrender.com/hocsinh/${tokenInfo.id_hocsinh}`, {
+        const response = await axios.get(`https://quiz-api-34vp.onrender.com/api/hocsinh/${tokenInfo.id_hocsinh}`, {
           headers: { Authorization: `Bearer ${storedUser.token}` },
         });
 
@@ -101,7 +101,7 @@ const ProfilePage = () => {
 
       // Giả sử có API PUT để cập nhật thông tin học sinh
       const response = await axios.put(
-        `https://quiz-api-34vp.onrender.com/hocsinh/${tokenInfo.id_hocsinh}`,
+        `https://quiz-api-34vp.onrender.com/api/hocsinh/${tokenInfo.id_hocsinh}`,
         { tendangnhap: updatedUsername },
         { headers: { Authorization: `Bearer ${storedUser.token}` } }
       );
