@@ -86,7 +86,7 @@ const FormQuestion = () => {
     console.log("Sending payload to /api/questions:", payload);
 
     try {
-      const response = await fetch("https://quiz-api-34vp.onrender.com/api/questions", {
+      const response = await fetch("/api/questions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -128,7 +128,7 @@ const FormQuestion = () => {
     formData.append("id_monhoc", examData.id_monhoc);
 
     try {
-      const response = await fetch("https://quiz-api-34vp.onrender.com/api/upload-questions", {
+      const response = await fetch("/api/upload-questions", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${user.token}`,
@@ -153,7 +153,7 @@ const FormQuestion = () => {
     try {
       // Set is_restricted = 1 for the exam
       await axios.post(
-        `https://quiz-api-34vp.onrender.com/api/dethi/${examData.id_dethi}/students`,
+        `/api/dethi/${examData.id_dethi}/students`,
         {
           is_restricted: 1,
           allowed_students: [],
