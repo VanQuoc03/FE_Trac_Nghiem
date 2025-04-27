@@ -8,7 +8,7 @@ const TeacherExamForm = () => {
   const [error, setError] = useState("");
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
-  const API_DETHI = "/api/dethi";
+  const API_DETHI = "https://quiz-api-34vp.onrender.com/api/dethi";
 
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
