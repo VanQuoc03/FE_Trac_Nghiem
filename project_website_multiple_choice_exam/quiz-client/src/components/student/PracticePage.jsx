@@ -46,7 +46,7 @@ const PracticePage = () => {
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div className="p-6 max-w-6xl mx-auto mt-24">
       <h1 className="text-2xl font-bold mb-4 text-center">Danh Sách Bài Ôn Tập</h1>
       {practiceExams.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

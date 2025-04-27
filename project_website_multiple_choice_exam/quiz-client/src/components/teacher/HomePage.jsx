@@ -9,29 +9,29 @@ const ExamCard = ({ id, title, startTime, endTime, duration, score, date, button
   const navigate = useNavigate();
 
   return (
-    <div className="bg-white rounded-xl shadow-md w-[250px] h-[100%] box border m-2">
-      <h3 className="font-bold p-2">{title}</h3>
+    <div className="bg-gradient-to-r from-[#f5f5f5] to-[#ffffff] rounded-xl shadow-lg w-[250px] h-[100%] box border m-2 hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
+      <h3 className="font-bold text-xl p-3 text-[#333333]">{title}</h3>
       <div>
         {startTime && endTime && duration && (
           <>
-            <p className="p-2 flex">
-              <CiClock2 className="m-1" /> <strong>{duration}</strong>
+            <p className="p-2 flex text-[#666666]">
+              <CiClock2 className="m-1 text-[#C7A36F]" /> <strong>{duration}</strong>
             </p>
-            <p className="p-2">
+            <p className="p-2 text-[#555555]">
               Thời gian bắt đầu: <strong>{startTime}</strong>
             </p>
-            <p className="p-2">
+            <p className="p-2 text-[#555555]">
               Thời gian kết thúc: <strong>{endTime}</strong>
             </p>
           </>
         )}
         {date && (
-          <p className="p-2">
+          <p className="p-2 text-[#444444]">
             Ngày thi: <strong>{new Date(date).toLocaleString("vi-VN")}</strong>
           </p>
         )}
         {score !== undefined && (
-          <p className="p-2">
+          <p className="p-2 text-[#444444]">
             Điểm: <strong>{score}</strong>
           </p>
         )}
@@ -39,7 +39,7 @@ const ExamCard = ({ id, title, startTime, endTime, duration, score, date, button
       <div className="flex justify-center mb-3">
         {button && (
           <button
-            className="mt-3 bg-white px-4 py-2 rounded-lg hover:bg-slate-300 w-[90%] text-black border-2 border-solid"
+            className="mt-3 bg-[#C7A36F] px-4 py-2 rounded-lg hover:bg-[#9c7a4e] text-white w-[90%] border-2 border-solid"
             onClick={() =>
               navigate(`/teacher/exam/${id}`, { state: { teacherId } })
             }
@@ -60,51 +60,34 @@ const HomePage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [user, setUser] = useState(null);
-  console.log(user)
   const [teacherId, setTeacherId] = useState(null);
 
   useEffect(() => {
     let storedUser = JSON.parse(localStorage.getItem("user"));
-    console.log("User from localStorage in HomePage:", storedUser);
-
     if (!storedUser) {
-      console.log("No user found, redirecting to /login");
       navigate("/login");
       return;
     }
     if (storedUser.role !== "teacher") {
-      console.log(`Invalid role: ${storedUser.role}, redirecting to /login`);
       navigate("/login");
       return;
     }
     if (!storedUser.token) {
-      console.log("No token found, redirecting to /login");
       navigate("/login");
       return;
     }
 
-    // Extract teacherId from token if user.id is missing
     let extractedTeacherId = storedUser.id;
     if (!extractedTeacherId) {
       try {
         const tokenPayload = JSON.parse(atob(storedUser.token.split(".")[1]));
         extractedTeacherId = tokenPayload.id_giaovien;
-        console.log("Extracted teacherId from token in HomePage:", extractedTeacherId);
-        // Update user object and localStorage
         storedUser.id = extractedTeacherId;
         localStorage.setItem("user", JSON.stringify(storedUser));
       } catch (error) {
-        console.error("Error decoding token in HomePage:", error);
-        console.log("Cannot extract ID from token, redirecting to /login");
         navigate("/login");
         return;
       }
-    }
-
-    if (!extractedTeacherId) {
-      console.log("No teacher ID found after token extraction, redirecting to /login");
-      navigate("/login");
-      return;
     }
 
     setUser(storedUser);
@@ -124,12 +107,10 @@ const HomePage = () => {
           throw new Error("API không trả về mảng!");
         }
 
-        // Lọc bài thi của giáo viên hiện tại
         const teacherExams = data.filter(
           (exam) => exam.dethi.id_giaovien === extractedTeacherId
         );
 
-        // Lọc bài thi hôm nay
         const today = new Date().toISOString().split("T")[0];
         const examsToday = teacherExams
           .filter(
@@ -145,7 +126,6 @@ const HomePage = () => {
             duration: `${exam.dethi.thoigianthi} phút`,
           }));
 
-        // Lọc bài thi đã hoàn thành
         const completed = teacherExams.filter((exam) => exam.trangthai === "hoanthanh");
         completed.sort((a, b) => new Date(b.ngaylam) - new Date(a.ngaylam));
 
@@ -153,7 +133,6 @@ const HomePage = () => {
         setCompletedExams(completed);
         setLatestExam(completed[0] || null);
       } catch (error) {
-        console.error("Lỗi khi lấy dữ liệu từ API:", error);
         setError(error.message || "Không thể tải bài thi");
       } finally {
         setLoading(false);
@@ -171,7 +150,7 @@ const HomePage = () => {
   }
 
   return (
-    <div className="bg-gray-100 min-h-screen p-5 w-[100%]">
+    <div className="min-h-screen p-5 w-[100%] mt-24">
       <div className="max-w-6xl mx-auto bg-white p-6 rounded-lg shadow-lg">
         <h2 className="font-bold text-2xl mb-4">Lịch thi hôm nay</h2>
         <div className="flex flex-wrap w-full gap-4 justify-start">
@@ -180,11 +159,11 @@ const HomePage = () => {
               <ExamCard key={exam.id} {...exam} teacherId={teacherId} button="Làm bài" />
             ))
           ) : (
-            <p>Không có bài thi nào hôm nay.</p>
+            <p className="text-[#777]">Không có bài thi nào hôm nay.</p>
           )}
         </div>
 
-        <h2 className="text-2xl font-bold mb-4">Các bài đã thi</h2>
+        <h2 className="text-2xl font-bold mb-4 mt-8">Các bài đã thi</h2>
         <div className="flex flex-wrap gap-4 justify-start">
           {completedExams.length > 0 ? (
             completedExams.map((exam) => (
@@ -198,13 +177,13 @@ const HomePage = () => {
               />
             ))
           ) : (
-            <p>Chưa có bài thi nào được hoàn thành.</p>
+            <p className="text-[#777]">Chưa có bài thi nào được hoàn thành.</p>
           )}
         </div>
 
         {latestExam && (
           <>
-            <h2 className="text-2xl font-bold mb-4">Bài thi mới nhất</h2>
+            <h2 className="text-2xl font-bold mb-4 mt-8">Bài thi mới nhất</h2>
             <div>
               <ExamCard
                 id={latestExam.id_baithi}

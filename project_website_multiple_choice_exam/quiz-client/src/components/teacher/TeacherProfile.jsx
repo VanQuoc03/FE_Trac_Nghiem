@@ -104,7 +104,7 @@ const TeacherProfile = () => {
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-6 bg-white shadow-md rounded-md mt-10">
+    <div className="max-w-3xl mx-auto p-6 bg-white shadow-md rounded-md mt-24">
       <div className="flex items-center gap-6">
         <img
           src={`https://i.pravatar.cc/150?u=${teacher.id_giaovien}`}
@@ -135,7 +135,7 @@ const TeacherProfile = () => {
             <strong>Lớp dạy:</strong> {teacher.lopdaychinh || "Không có"}
           </p>
           <button
-            className="bg-blue-500 text-white rounded hover:bg-blue-600 px-4 py-2 mt-4"
+            className="bg-[#C7A36F] text-white rounded hover:bg-[#8f6427] px-4 py-2 mt-4"
             onClick={() => navigate("/teacher/profile/edit-teacher")}
           >
             Chỉnh sửa thông tin

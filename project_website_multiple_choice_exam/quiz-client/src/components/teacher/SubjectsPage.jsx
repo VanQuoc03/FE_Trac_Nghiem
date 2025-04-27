@@ -90,90 +90,98 @@ const SubjectsPage = () => {
   }
 
   return (
-    <div className="w-[80%] mx-auto mt-11">
-      <div className="flex justify-between">
-        <div className="w-[75%]">
-          <h2 className="font-medium text-3xl mb-6">Thư viện đề thi</h2>
-          <div className="flex space-x-4 mb-8">
-            <button
-              className={`px-4 py-2 rounded-md ${
-                selectedSubject === "Tất cả"
-                  ? "bg-green-500 text-white"
-                  : "bg-gray-200"
-              }`}
-              onClick={() => setSelectedSubject("Tất cả")}
-            >
-              Tất cả
-            </button>
-            {filteredSubjects.map((subject, index) => (
-              <button
-                key={index}
-                className={`px-4 py-2 rounded-md ${
-                  selectedSubject === subject
-                    ? "bg-green-500 text-white"
-                    : "bg-gray-200"
-                }`}
-                onClick={() => setSelectedSubject(subject)}
-              >
-                {subject}
-              </button>
-            ))}
+    <div className="w-[90%] mx-auto mt-24">
+      <div className="flex gap-8">
+        {/* Sidebar: Teacher's Information */}
+        <div className="bg-white w-[28%] h-[450px] rounded-xl shadow-md p-4">
+          <div className="flex justify-center mb-4">
+            <FaUserCircle className="text-5xl" />
           </div>
-          <div className="flex justify-between">
-            <input
-              className="border-2 rounded-l-md w-[100%] h-[35px] pl-2"
-              type="text"
-              placeholder="Nhập từ khóa bạn muốn tìm kiếm..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <button className="bg-green-500 w-[100px] rounded-r-md text-white">
-              Tìm kiếm
-            </button>
+          <div className="text-center mb-4">
+            <p className="font-semibold">{user?.ten_giaovien || "Giáo viên"}</p>
+            <p className="text-sm text-gray-500">{user?.email}</p>
           </div>
-        </div>
-        <div className="bg-white justify-center w-[25%] h-[320px] box rounded-xl m-4 shadow-md">
-          <div className="flex flex-wrap justify-center relative mt-4">
-            <FaUserCircle className="size-14" />
-            <div className="absolute mr-16">
-              <p className="absolute w-[100px] mt-12">{user?.ten_giaovien || "Giáo viên"}</p>
-            </div>
-          </div>
-          <hr className="mt-7 border-gray-400" />
-          <div className="flex italic m-4">
-            <PiWarningCircleThin className="size-6" />
-            <p className="text-sm">
-              Bạn chưa tạo mục tiêu cho quá trình luyện thi của mình. Tạo ngay
-            </p>
+          <hr className="my-4 border-gray-300" />
+          <div className="italic text-sm mb-4 flex items-center justify-center">
+            <PiWarningCircleThin className="text-lg mr-2" />
+            Bạn chưa tạo mục tiêu cho quá trình luyện thi của mình. Tạo ngay!
           </div>
           <div className="flex justify-center">
-            <button className="text-white bg-green-500 rounded-full w-[90%] justify-center flex items-center h-[35px]">
-              <MdSsidChart />
+            <button className="text-white bg-[#C7A36F] rounded-full w-[80%] flex items-center justify-center h-[40px] hover:bg-[#9c7a4e] transition-all">
+              <MdSsidChart className="mr-2" />
               Thống kê kết quả
             </button>
           </div>
         </div>
-      </div>
-      <div className="flex items-center flex-wrap justify-center border-t-2 border-gray-200 mt-8">
-        {filteredExams.length > 0 ? (
-          filteredExams.map((exam) => (
-            <Link
-              key={exam.id_dethi}
-              to={`/teacher/exam/${exam.id_dethi}`}
-              className="w-[20%] h-[200px] justify-between bg-white p-4 rounded-md m-4 flex flex-col shadow-[0_3px_10px_rgb(0,0,0,0.2)]"
-            >
-              <h3 className="font-bold">{exam.id_dethi}</h3>
-              <h3 className="font-bold">{getTenMonHoc(exam.id_monhoc)}</h3>
-              <p className="font-semibold">{user?.ten_giaovien || "Giáo viên"}</p>
-              <p>Thời gian: {exam.thoigianthi} phút</p>
-              <span className="w-[35%] text-sm rounded-full flex justify-center bg-green-500 text-white">
-                #{getTenMonHoc(exam.id_monhoc)}
-              </span>
-            </Link>
-          ))
-        ) : (
-          <p>Không có đề thi nào.</p>
-        )}
+
+        <div className="w-[70%]">
+          <h2 className="font-medium text-3xl mb-6">Thư viện đề thi</h2>
+
+          {/* Filter: Subjects & Search */}
+          <div className="flex flex-col md:flex-row justify-between items-center mb-8">
+            <div className="flex space-x-4 mb-4 md:mb-0">
+              <button
+                className={`px-4 py-2 rounded-md ${
+                  selectedSubject === "Tất cả"
+                    ? "bg-[#C7A36F] text-white"
+                    : "bg-gray-200"
+                }`}
+                onClick={() => setSelectedSubject("Tất cả")}
+              >
+                Tất cả
+              </button>
+              {filteredSubjects.map((subject, index) => (
+                <button
+                  key={index}
+                  className={`px-4 py-2 rounded-md ${
+                    selectedSubject === subject
+                      ? "bg-[#C7A36F] text-white"
+                      : "bg-gray-200"
+                  }`}
+                  onClick={() => setSelectedSubject(subject)}
+                >
+                  {subject}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex w-[80%] md:w-[40%]">
+              <input
+                className="w-full h-[35px] pl-2 border-2 rounded-l-md"
+                type="text"
+                placeholder="Nhập từ khóa bạn muốn tìm kiếm..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <button className="bg-[#C7A36F] w-[30%] rounded-r-md text-white">
+                Tìm kiếm
+              </button>
+            </div>
+          </div>
+
+          {/* Exam list */}
+          <div className="flex items-center flex-wrap justify-start border-t-2 border-gray-200 mt-8">
+            {filteredExams.length > 0 ? (
+              filteredExams.map((exam) => (
+                <Link
+                  key={exam.id_dethi}
+                  to={`/teacher/exam/${exam.id_dethi}`}
+                  className="w-[30%] h-[250px] bg-white p-4 rounded-md m-4 flex flex-col shadow-md transition-transform duration-200 hover:scale-105"
+                >
+                  <h3 className="font-bold">{exam.id_dethi}</h3>
+                  <h3 className="font-bold">{getTenMonHoc(exam.id_monhoc)}</h3>
+                  <p className="font-semibold">{user?.ten_giaovien || "Giáo viên"}</p>
+                  <p>Thời gian: {exam.thoigianthi} phút</p>
+                  <span className="w-[35%] text-sm rounded-full flex justify-center bg-[#C7A36F] text-white">
+                    #{getTenMonHoc(exam.id_monhoc)}
+                  </span>
+                </Link>
+              ))
+            ) : (
+              <p className="w-full text-center">Không có đề thi nào.</p>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

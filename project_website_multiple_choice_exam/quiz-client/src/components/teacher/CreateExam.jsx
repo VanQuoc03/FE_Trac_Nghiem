@@ -110,7 +110,7 @@ const CreateExam = () => {
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-300 p-4 shadow-md w-[90%] mx-auto mt-10">
+    <div className="bg-white rounded-lg border border-gray-300 p-4 shadow-md w-[90%] mx-auto mt-24">
       <h2 className="text-4xl flex justify-center m-5 font-medium">
         Tạo bài thi
       </h2>
@@ -215,7 +215,7 @@ const CreateExam = () => {
         <div className="flex justify-center col-span-2">
           <button
             type="submit"
-            className="h-10 w-full bg-slate-100 border border-gray-300 rounded-md hover:bg-green-500 disabled:bg-gray-300"
+            className="h-10 w-full bg-slate-100 border border-gray-300 rounded-md hover:bg-[#C7A36F] disabled:bg-gray-300"
             disabled={loading}
           >
             {loading ? "Đang tạo..." : "Tạo câu hỏi"}
