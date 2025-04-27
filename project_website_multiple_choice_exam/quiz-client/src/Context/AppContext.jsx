@@ -13,7 +13,7 @@ export function AppContextProvider({ children }) {
         const user = JSON.parse(localStorage.getItem("user"));
         if (!user) return;
 
-        const response = await axios.get("/api/baithi", {
+        const response = await axios.get("https://quiz-api-34vp.onrender.com/api/baithi", {
           headers: {
             Authorization: `Bearer ${user.token}`,
           },
