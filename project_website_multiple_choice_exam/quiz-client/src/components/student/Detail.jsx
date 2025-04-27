@@ -31,7 +31,7 @@ export default function Detail() {
 
       try {
         const user = JSON.parse(localStorage.getItem("user"));
-        const response = await axios.get(`/api/hocsinh/${studentInfo.id_hocsinh}`, {
+        const response = await axios.get(`https://quiz-api-34vp.onrender.com/api/hocsinh/${studentInfo.id_hocsinh}`, {
           headers: {
             Authorization: `Bearer ${user.token}`,
             "Content-Type": "application/json",
