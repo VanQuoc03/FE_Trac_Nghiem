@@ -31,7 +31,7 @@ const FormQuestion = () => {
 
     if (!examData || !examData.id_dethi || !examData.id_monhoc) {
       setError("Dữ liệu đề thi không hợp lệ. Vui lòng tạo lại.");
-      navigate("https://quiz-api-34vp.onrender.com/teacher/create-exam");
+      navigate("/teacher/create-exam");
     }
   }, [navigate, examData]);
 
@@ -166,7 +166,7 @@ const FormQuestion = () => {
         }
       );
 
-      navigate("https://quiz-api-34vp.onrender.com/teacher/create-student-list", {
+      navigate("/teacher/create-student-list", {
         state: { examData: { ...examData, is_restricted: 1 } },
       });
     } catch (error) {
