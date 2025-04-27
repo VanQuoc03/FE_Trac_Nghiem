@@ -13,7 +13,7 @@ export default function DeThiManager({ setToken }) {
   const fetchDeThi = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/api/dethi', {
+      const res = await axios.get('https://quiz-api-34vp.onrender.com/api/dethi', {
         headers: { Authorization: `Bearer ${token}` },
       });
       setDeThiList(res.data);
