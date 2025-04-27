@@ -15,7 +15,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await axios.post("/api/admin/login", {
+      const res = await axios.post("https://quiz-api-34vp.onrender.com/api/admin/login", {
         login: login.trim(),
         pass: pass.trim(),
       });
