@@ -22,7 +22,7 @@ export default function HocSinhManager({ setToken }) {
   const fetchHocSinh = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/api/hocsinh', {
+      const res = await axios.get('https://quiz-api-34vp.onrender.com/api/hocsinh', {
         headers: { Authorization: `Bearer ${token}` },
       });
       setHocSinhList(res.data);
@@ -50,12 +50,12 @@ export default function HocSinhManager({ setToken }) {
         // Update học sinh
         const updateData = { ...formData };
         delete updateData.matkhau; // Không gửi mật khẩu khi cập nhật
-        await axios.put(`/api/hocsinh/${editingId}`, updateData, {
+        await axios.put(`https://quiz-api-34vp.onrender.com/api/hocsinh/${editingId}`, updateData, {
           headers: { Authorization: `Bearer ${token}` },
         });
       } else {
         // Thêm học sinh mới
-        await axios.post('/api/hocsinh/register', formData, {
+        await axios.post('https://quiz-api-34vp.onrender.com/api/hocsinh/register', formData, {
           headers: { Authorization: `Bearer ${token}` },
         });
       }
@@ -90,7 +90,7 @@ export default function HocSinhManager({ setToken }) {
     if (!window.confirm('Bạn có chắc chắn muốn xóa học sinh này? Tất cả bài thi liên quan sẽ bị xóa.')) return;
     setError('');
     try {
-      await axios.delete(`/api/hocsinh/${id}`, {
+      await axios.delete(`https://quiz-api-34vp.onrender.com/api/hocsinh/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       fetchHocSinh();
