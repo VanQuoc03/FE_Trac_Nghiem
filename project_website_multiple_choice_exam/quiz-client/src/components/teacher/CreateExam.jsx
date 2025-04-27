@@ -23,7 +23,7 @@ const CreateExam = () => {
 
     const fetchSubjects = async () => {
       try {
-        const response = await axios.get("/api/monhoc", {
+        const response = await axios.get("https://quiz-api-34vp.onrender.com/api/monhoc", {
           headers: { Authorization: `Bearer ${user.token}` },
         });
         setSubjects(response.data);
@@ -87,7 +87,7 @@ const CreateExam = () => {
 
     try {
       console.log("Sending examData:", examData);
-      const response = await axios.post("/api/exams", examData, {
+      const response = await axios.post("https://quiz-api-34vp.onrender.com/api/exams", examData, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${user.token}`,
