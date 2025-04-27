@@ -8,7 +8,7 @@ const FormTeacher = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
-  const API_GIANGVIEN = "/api/giaovien";
+  const API_GIANGVIEN = "https://quiz-api-34vp.onrender.com/api/giaovien";
 
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
