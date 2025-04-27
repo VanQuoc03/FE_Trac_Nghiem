@@ -22,7 +22,7 @@ const BaiThiTheoNgay = () => {
       setLoading(true);
 
       try {
-        const res = await axios.get("/api/baithi");
+        const res = await axios.get("https://quiz-api-34vp.onrender.com/api/baithi");
         const filtered = res.data.filter((baiThi) => {
           const ngayLam = new Date(baiThi.ngaylam).toISOString().slice(0, 10);
           const selectedDate = new Date(ngay).toISOString().slice(0, 10);
