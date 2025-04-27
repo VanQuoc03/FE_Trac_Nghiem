@@ -12,7 +12,7 @@ export default function MonHocManager({ setToken }) {
   const fetchMonHoc = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/api/monhoc', {
+      const res = await axios.get('https://quiz-api-34vp.onrender.com/api/monhoc', {
         headers: { Authorization: `Bearer ${token}` },
       });
       setMonHocList(res.data);
