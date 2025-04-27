@@ -17,7 +17,7 @@ const PracticePage = () => {
           return;
         }
 
-        const response = await axios.get("/api/dethi", {
+        const response = await axios.get("https://quiz-api-34vp.onrender.com/api/dethi", {
           headers: {
             Authorization: `Bearer ${user.token}`,
             "Content-Type": "application/json",
