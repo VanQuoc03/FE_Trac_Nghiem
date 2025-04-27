@@ -53,7 +53,7 @@ const JoinExamTake = () => {
           return;
         }
 
-        const examResponse = await axios.get(`/api/dethi/${id_dethi}`, {
+        const examResponse = await axios.get(`https://quiz-api-34vp.onrender.com/api/dethi/${id_dethi}`, {
           headers: { Authorization: `Bearer ${user.token}` },
         });
 
@@ -179,7 +179,7 @@ const JoinExamTake = () => {
 
       const id_baithi = `BT${uuidv4()}`; // Generate UUID-based id_baithi
       await axios.post(
-        "/api/baithi",
+        "https://quiz-api-34vp.onrender.com/api/baithi",
         {
           id_baithi,
           id_hocsinh,
@@ -252,7 +252,7 @@ const JoinExamTake = () => {
         diemthi: calculatedScore,
       };
 
-      await axios.post("/api/baithi", payload, {
+      await axios.post("https://quiz-api-34vp.onrender.com/api/baithi", payload, {
         headers: { Authorization: `Bearer ${user.token}` },
       });
     } catch (err) {
