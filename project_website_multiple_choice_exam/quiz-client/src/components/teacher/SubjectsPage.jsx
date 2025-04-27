@@ -44,7 +44,7 @@ const SubjectsPage = () => {
 
     const fetchExams = async () => {
       try {
-        const res = await axios.get(`/api/dethi/giaovien/${storedUser.id}`, {
+        const res = await axios.get(`teacher/subjects/api/dethi/giaovien/${storedUser.id}`, {
           headers: {
             Authorization: `Bearer ${storedUser.token}`,
             "Content-Type": "application/json",
