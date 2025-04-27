@@ -25,7 +25,7 @@ export default function GiaoVienManager({ setToken }) {
   const fetchGiaoVien = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/api/giaovien', {
+      const res = await axios.get('https://quiz-api-34vp.onrender.com/api/giaovien', {
         headers: { Authorization: `Bearer ${token}` },
       });
       setGiaoVienList(res.data);
@@ -39,7 +39,7 @@ export default function GiaoVienManager({ setToken }) {
   // Fetch danh sách môn học
   const fetchMonHoc = async () => {
     try {
-      const res = await axios.get('/api/monhoc', {
+      const res = await axios.get('https://quiz-api-34vp.onrender.com/api/monhoc', {
         headers: { Authorization: `Bearer ${token}` },
       });
       setMonHocList(res.data);
@@ -66,12 +66,12 @@ export default function GiaoVienManager({ setToken }) {
         // Update giáo viên
         const updateData = { ...formData };
         delete updateData.matkhau_gv; // Không gửi mật khẩu khi cập nhật
-        await axios.put(`/api/giaovien/${editingId}`, updateData, {
+        await axios.put(`https://quiz-api-34vp.onrender.com/api/giaovien/${editingId}`, updateData, {
           headers: { Authorization: `Bearer ${token}` },
         });
       } else {
         // Thêm giáo viên mới
-        await axios.post('/api/giaovien/register', formData, {
+        await axios.post('https://quiz-api-34vp.onrender.com/api/giaovien/register', formData, {
           headers: { Authorization: `Bearer ${token}` },
         });
       }
@@ -110,7 +110,7 @@ export default function GiaoVienManager({ setToken }) {
     if (!window.confirm('Bạn có chắc chắn muốn xóa giáo viên này không?')) return;
     setError('');
     try {
-      await axios.delete(`/api/giaovien/${id}`, {
+      await axios.delete(`https://quiz-api-34vp.onrender.com/api/giaovien/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       fetchGiaoVien();
