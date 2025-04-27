@@ -21,13 +21,13 @@ const CreateStudentList = () => {
 
     const fetchStudents = async () => {
       try {
-        const response = await axios.get("/api/hocsinh", {
+        const response = await axios.get("https://quiz-api-34vp.onrender.com/api/hocsinh", {
           headers: { Authorization: `Bearer ${user.token}` },
         });
         setStudents(response.data);
 
         // Fetch existing student assignments
-        const examResponse = await axios.get(`/api/dethi/${examData.id_dethi}`, {
+        const examResponse = await axios.get(`https://quiz-api-34vp.onrender.com/api/dethi/${examData.id_dethi}`, {
           headers: { Authorization: `Bearer ${user.token}` },
         });
         setAllowedStudents(
@@ -57,7 +57,7 @@ const CreateStudentList = () => {
     const user = JSON.parse(localStorage.getItem("user"));
     try {
       await axios.post(
-        `/api/dethi/${examData.id_dethi}/students`,
+        `https://quiz-api-34vp.onrender.com/api/dethi/${examData.id_dethi}/students`,
         {
           is_restricted: 1, // Always restricted
           allowed_students: allowedStudents,
