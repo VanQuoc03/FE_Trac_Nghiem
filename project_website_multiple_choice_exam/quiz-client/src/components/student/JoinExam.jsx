@@ -52,7 +52,7 @@ const JoinExam = () => {
         if (!user || user.role !== 'student') return navigate('/login');
 
         const [accessRes, allExamRes] = await Promise.all([
-          axios.get('/api/accessible-exams', {
+          axios.get('https://quiz-api-34vp.onrender.com/api/accessible-exams', {
             headers: { Authorization: `Bearer ${user.token}` },
           }),
           axios.get('/api/dethi', {
