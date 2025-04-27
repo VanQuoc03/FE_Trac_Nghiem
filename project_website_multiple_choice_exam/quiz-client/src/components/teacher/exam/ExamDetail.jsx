@@ -12,7 +12,7 @@ const ExamDetail = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const API = `/api/dethi/${id_dethi}`;
+  const API = `https://quiz-api-34vp.onrender.com/api/dethi/${id_dethi}`;
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
@@ -50,7 +50,7 @@ const ExamDetail = () => {
 
     try {
       const user = JSON.parse(localStorage.getItem("user"));
-      await axios.delete(`/api/dethi/${id_dethi}`, {
+      await axios.delete(`https://quiz-api-34vp.onrender.com/api/dethi/${id_dethi}`, {
         headers: { Authorization: `Bearer ${user.token}` },
       });
       alert("Xóa đề thi thành công!");
@@ -73,7 +73,7 @@ const ExamDetail = () => {
     try {
       const user = JSON.parse(localStorage.getItem("user"));
       await axios.post(
-        `/api/dethi/${id_dethi}/students`,
+        `https://quiz-api-34vp.onrender.com/api/dethi/${id_dethi}/students`,
         {
           is_restricted: isRestricted ? 1 : 0,
           allowed_students: isRestricted ? allowedStudents : [],
