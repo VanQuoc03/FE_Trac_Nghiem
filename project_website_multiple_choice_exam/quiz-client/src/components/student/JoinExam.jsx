@@ -55,7 +55,7 @@ const JoinExam = () => {
           axios.get('https://quiz-api-34vp.onrender.com/api/accessible-exams', {
             headers: { Authorization: `Bearer ${user.token}` },
           }),
-          axios.get('/api/dethi', {
+          axios.get('https://quiz-api-34vp.onrender.com/api/dethi', {
             headers: { Authorization: `Bearer ${user.token}` },
           }),
         ]);
