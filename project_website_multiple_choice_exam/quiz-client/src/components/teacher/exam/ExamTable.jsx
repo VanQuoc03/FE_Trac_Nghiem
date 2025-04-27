@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 const ExamTable = () => {
   const [exams, setExams] = useState(null);
-  const API_BAITHI = "/api/baithi";
+  const API_BAITHI = "https://quiz-api-34vp.onrender.com/api/baithi";
   const [selectedTestId, setSelectedTestId] = useState("");
   const [filtered, setFiltered] = useState([]);
   const [testOptions, setTestOptions] = useState([]);
