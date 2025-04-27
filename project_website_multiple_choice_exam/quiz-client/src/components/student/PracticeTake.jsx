@@ -56,7 +56,7 @@ const PracticeTake = () => {
         }
 
         console.log("Making API request to /api/dethi/", id_dethi);
-        const examResponse = await axios.get(`/api/dethi/${id_dethi}`, {
+        const examResponse = await axios.get(`https://quiz-api-34vp.onrender.com/api/dethi/${id_dethi}`, {
           headers: { Authorization: `Bearer ${user.token}` },
         });
         const examData = examResponse.data;
@@ -177,7 +177,7 @@ const PracticeTake = () => {
       };
 
       console.log("Submitting exam result:", payload);
-      const response = await axios.post("/api/baithi", payload, {
+      const response = await axios.post("https://quiz-api-34vp.onrender.com/api/baithi", payload, {
         headers: { Authorization: `Bearer ${user.token}` },
       });
 
