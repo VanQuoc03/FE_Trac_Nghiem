@@ -104,13 +104,15 @@ export default function App() {
             <Route path="practice" element={<PracticePage />} />
             <Route path="practice/take/:id_dethi" element={<PracticeTake />} />
             <Route path="join-exam" element={<JoinExam />} />
-            <Route path="join-exam/take/:id_dethi" element={<JoinExamTake />} />
+
             <Route path="subjects" element={<SubjectsPageStudent />} />
             <Route path="notifications" element={<ThongBao />} />
             <Route path="contact" element={<ContactPage />} />
             <Route path="profile" element={<ProfilePage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
+
+          <Route path="join-exam/take/:id_dethi" element={<JoinExamTake />} />
 
           {/* Teacher Routes */}
           <Route

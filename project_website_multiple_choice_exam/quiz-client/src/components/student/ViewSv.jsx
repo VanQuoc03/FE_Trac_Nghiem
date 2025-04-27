@@ -39,7 +39,7 @@ export default function ViewSv() {
         item.trangthai.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.dethi?.tendethi.toLowerCase().includes(searchTerm.toLowerCase()) // ✅ Tìm theo tên đề thi
       ) &&
-      (searchDate ? formatDate(item.ngaylam) === searchDate : true)
+      (searchDate ? formatDate(item) === searchDate : true)
   );
 
   // Pagination logic
