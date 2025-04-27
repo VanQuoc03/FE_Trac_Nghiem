@@ -26,7 +26,7 @@ export default function RegisterStudent({ onRegister }) {
         phone,
       };
 
-      const response = await axios.post("/api/hocsinh/register", payload);
+      const response = await axios.post("https://quiz-api-34vp.onrender.com/api/hocsinh/register", payload);
       const { message } = response.data;
 
       if (message.includes("thành công")) {
