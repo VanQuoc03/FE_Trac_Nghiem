@@ -17,7 +17,7 @@ export default function Login({ onLogin }) {
 
     try {
       const endpoint =
-        role === "student" ? "/api/hocsinh/login" : "/api/giaovien/login";
+        role === "student" ? "https://quiz-api-34vp.onrender.com/api/hocsinh/login" : "https://quiz-api-34vp.onrender.com/api/giaovien/login";
       const payload =
         role === "student"
           ? { tendangnhap: username, matkhau: password }
