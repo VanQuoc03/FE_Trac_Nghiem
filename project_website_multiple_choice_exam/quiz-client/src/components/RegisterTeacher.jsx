@@ -44,7 +44,7 @@ export default function RegisterTeacher({ onRegister }) {
         lopdaychinh: classTeach,
       };
 
-      const response = await axios.post("/api/giaovien/register", payload);
+      const response = await axios.post("https://quiz-api-34vp.onrender.com/api/giaovien/register", payload);
       const { message } = response.data;
 
       if (message.includes("thành công")) {
