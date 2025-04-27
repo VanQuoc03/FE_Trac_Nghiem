@@ -19,7 +19,7 @@ const EditExam = () => {
   useEffect(() => {
     const fetchExam = async () => {
       try {
-        const res = await axios.get(`/api/dethi/${id_dethi}`);
+        const res = await axios.get(`https://quiz-api-34vp.onrender.com/api/dethi/${id_dethi}`);
         console.log("Backend response:", res.data);
 
         // Assume thoigianbatdau is in local timezone (YYYY-MM-DD HH:mm:ss)
@@ -74,7 +74,7 @@ const EditExam = () => {
         return;
       }
 
-      await axios.put(`/api/questions/${question.id_cauhoi}`, {
+      await axios.put(`https://quiz-api-34vp.onrender.com/api/questions/${question.id_cauhoi}`, {
         noidungcauhoi: question.noidungcauhoi,
         dapan: question.dapan,
         options: question.options,
@@ -92,7 +92,7 @@ const EditExam = () => {
     if (!window.confirm("Bạn có chắc chắn muốn xóa câu hỏi này?")) return;
 
     try {
-      await axios.delete(`/api/questions/${question.id_cauhoi}`);
+      await axios.delete(`https://quiz-api-34vp.onrender.com/api/questions/${question.id_cauhoi}`);
       const updatedQuestions = questions.filter((_, i) => i !== questionIndex);
       setQuestions(updatedQuestions);
       setError("");
@@ -135,7 +135,7 @@ const EditExam = () => {
         return;
       }
 
-      const res = await axios.post(`/api/questions`, {
+      const res = await axios.post(`https://quiz-api-34vp.onrender.com/api/questions`, {
         examId: id_dethi,
         questions: [
           {
@@ -181,7 +181,7 @@ const EditExam = () => {
 
       console.log("Sending formattedStartTime:", formattedStartTime);
 
-      await axios.put(`/api/dethi/${id_dethi}`, {
+      await axios.put(`https://quiz-api-34vp.onrender.com/api/dethi/${id_dethi}`, {
         thoigianthi: parseInt(thoigianthi),
         trangthai,
         thoigianbatdau: formattedStartTime,
