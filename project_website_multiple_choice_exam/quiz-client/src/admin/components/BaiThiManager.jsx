@@ -14,7 +14,7 @@ export default function BaiThiManager({ setToken }) {
   const fetchBaiThi = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/api/baithi', {
+      const res = await axios.get('https://quiz-api-34vp.onrender.com/api/baithi', {
         headers: { Authorization: `Bearer ${token}` },
       });
       setBaiThiList(res.data);
@@ -28,7 +28,7 @@ export default function BaiThiManager({ setToken }) {
   // Fetch danh sách đề thi
   const fetchDeThi = async () => {
     try {
-      const res = await axios.get('/api/dethi', {
+      const res = await axios.get('https://quiz-api-34vp.onrender.com/api/dethi', {
         headers: { Authorization: `Bearer ${token}` },
       });
       setDeThiList(res.data);
@@ -40,7 +40,7 @@ export default function BaiThiManager({ setToken }) {
   // Fetch danh sách học sinh
   const fetchHocSinh = async () => {
     try {
-      const res = await axios.get('/api/hocsinh', {
+      const res = await axios.get('https://quiz-api-34vp.onrender.com/api/hocsinh', {
         headers: { Authorization: `Bearer ${token}` },
       });
       setHocSinhList(res.data);
