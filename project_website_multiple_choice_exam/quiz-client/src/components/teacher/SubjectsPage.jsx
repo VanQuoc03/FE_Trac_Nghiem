@@ -5,7 +5,7 @@ import { MdSsidChart } from "react-icons/md";
 import { PiWarningCircleThin } from "react-icons/pi";
 import axios from "axios";
 
-const API_MONHOC = "/api/monhoc";
+const API_MONHOC = "https://quiz-api-34vp.onrender.com/api/monhoc";
 
 const SubjectsPage = () => {
   const navigate = useNavigate();
