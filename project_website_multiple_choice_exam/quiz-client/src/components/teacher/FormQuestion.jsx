@@ -31,7 +31,7 @@ const FormQuestion = () => {
 
     if (!examData || !examData.id_dethi || !examData.id_monhoc) {
       setError("Dữ liệu đề thi không hợp lệ. Vui lòng tạo lại.");
-      navigate("/teacher/create-exam");
+      navigate("https://quiz-api-34vp.onrender.com/teacher/create-exam");
     }
   }, [navigate, examData]);
 
@@ -153,7 +153,7 @@ const FormQuestion = () => {
     try {
       // Set is_restricted = 1 for the exam
       await axios.post(
-        `/api/dethi/${examData.id_dethi}/students`,
+        `https://quiz-api-34vp.onrender.com/api/dethi/${examData.id_dethi}/students`,
         {
           is_restricted: 1,
           allowed_students: [],
@@ -166,7 +166,7 @@ const FormQuestion = () => {
         }
       );
 
-      navigate("/teacher/create-student-list", {
+      navigate("https://quiz-api-34vp.onrender.com/teacher/create-student-list", {
         state: { examData: { ...examData, is_restricted: 1 } },
       });
     } catch (error) {
