@@ -3,7 +3,7 @@ import { CiClock2 } from "react-icons/ci";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
-const API_BAITHI = "/api/baithi";
+const API_BAITHI = "https://quiz-api-34vp.onrender.com/api/baithi";
 
 const ExamCard = ({ id, title, startTime, endTime, duration, score, date, button, teacherId }) => {
   const navigate = useNavigate();
