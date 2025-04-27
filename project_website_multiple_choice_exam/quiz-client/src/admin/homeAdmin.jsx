@@ -42,22 +42,22 @@ export default function HomeAdmin({ setToken }) {
       setLoading(true);
       try {
         // Fetch giáo viên
-        const giaoVienResponse = await axios.get('/api/giaovien', {
+        const giaoVienResponse = await axios.get('https://quiz-api-34vp.onrender.com/api/giaovien', {
           headers: { Authorization: `Bearer ${token}` },
         });
 
         // Fetch học sinh
-        const hocSinhResponse = await axios.get('/api/hocsinh', {
+        const hocSinhResponse = await axios.get('https://quiz-api-34vp.onrender.com/api/hocsinh', {
           headers: { Authorization: `Bearer ${token}` },
         });
 
         // Fetch đề thi
-        const deThiResponse = await axios.get('/api/dethi', {
+        const deThiResponse = await axios.get('https://quiz-api-34vp.onrender.com/api/dethi', {
           headers: { Authorization: `Bearer ${token}` },
         });
 
         // Fetch bài thi
-        const baiThiResponse = await axios.get('/api/baithi', {
+        const baiThiResponse = await axios.get('https://quiz-api-34vp.onrender.com/api/baithi', {
           headers: { Authorization: `Bearer ${token}` },
         });
 
